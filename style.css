@@ -1,0 +1,13 @@
+.links {
+    stroke:blueviolet;
+}
+
+.nodes {
+    fill: cyan;
+    stroke: black;
+    stroke-width: 1;
+}
+
+svg {
+    background-color: gainsboro;
+}
