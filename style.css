@@ -1,0 +1,19 @@
+.edge {
+    stroke:blueviolet;
+    stroke-width: 4;
+}
+
+.circle {
+    fill: cyan;
+    stroke: black;
+    stroke-width: 1;
+}
+
+.circle:hover {
+    fill: yellow;
+    cursor: pointer;
+}
+
+svg {
+    background-color: gainsboro;
+}
