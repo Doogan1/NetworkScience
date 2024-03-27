@@ -1,5 +1,6 @@
 function defineDragBehavior(simulation) {
     function dragstarted(event) {
+        isVertexBeingDragged = true;
         if (!event.active) simulation.alphaTarget(0.3).restart();
         event.sourceEvent.stopPropagation(); // Stop event propagation
         event.subject.fx = event.subject.x;
@@ -13,6 +14,7 @@ function defineDragBehavior(simulation) {
     }
 
     function dragended(event) {
+        isVertexBeingDragged = false;
         if (!event.active) simulation.alphaTarget(0);
         event.subject.fx = null;
         event.subject.fy = null;
@@ -31,24 +33,29 @@ class Vertex {
     }
 
     draw(g, simulation) {
-        let d3Circle = d3.select(`#vertex-${this.id}`).datum(this.position);
-        
-        if (!this.circle) {
-            this.circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-            this.circle.setAttribute('class', 'circle');
-        }
-        
-        this.circle.setAttribute('id', `vertex-${this.id}`);
-        this.circle.setAttribute("cx", this.position.x);
-        this.circle.setAttribute("cy", this.position.y);
-        this.circle.setAttribute("r", 20);
-
-        g.appendChild(this.circle);
-
-        if (simulation) {
-            const dragBehavior = defineDragBehavior(simulation);
-            d3Circle.call(dragBehavior);
-        }
+        // Convert the container to a D3 selection if it's not already one
+        let gSelection = d3.select(g);
+    
+        // Bind the vertex data to a circle. If the circle doesn't exist, enter() will create it.
+        let d3Circle = gSelection.selectAll(`#vertex-${this.id}`)
+            .data([this.position], d => d.id);
+    
+        // Enter selection: Create the circle if it doesn't exist
+        d3Circle.enter().append('circle')
+            .attr('class', 'circle')
+            .attr('id', `vertex-${this.id}`)
+            .attr('r', 20)
+            .merge(d3Circle) // Merge enter and update selections
+            .attr('cx', d => d.x)
+            .attr('cy', d => d.y)
+            .call(simulation ? defineDragBehavior(simulation) : () => {});
+    
+        // If the circles are already created, this will update their positions.
+        d3Circle.attr('cx', d => d.x)
+            .attr('cy', d => d.y);
+    
+        // Remove any circles that no longer have corresponding data
+        d3Circle.exit().remove();
     }
 
     
@@ -130,19 +137,20 @@ function createGraphFromJson(json, svgContainer) {
 document.addEventListener('DOMContentLoaded', async () => {
     // Width and height
     var width = 800, height = 600;
-
+    let isVertexBeingDragged = false;
         // Setup the SVG and the group (g) element
     var svg = d3.select("#network").append("svg")
         .attr("width", width)
         .attr("height", height)
         .call(d3.zoom().on("zoom", function (event) {
-            if (!event.target.classList.contains("circle")) {
+            if (!isVertexBeingDragged) {
                 g.attr("transform", event.transform);
             }
         }))
         //.append("g");
 
     var g = svg.append("g"); // All visual elements will be added to this group
+
     
     svg.call(d3.zoom().on("zoom", function (event) {
         g.attr("transform", event.transform); // Apply the transformation to the group element
