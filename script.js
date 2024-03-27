@@ -30,6 +30,7 @@ class Vertex {
     constructor(x, y, id) {
         this.position = { x, y };
         this.id = id;
+        this.edges = [];
     }
 
     draw(g, simulation) {
@@ -91,6 +92,8 @@ class Graph {
 
     addEdge(edge) {
         this.edgeSet.push(edge);
+        this.vertexSet[edge.vertex1.id].edges.push(edge);
+        this.vertexSet[edge.vertex2.id].edges.push(edge);
     }
 
     draw(g, simulation) {
@@ -106,7 +109,18 @@ class Graph {
             vertex.draw(g, simulation);
         });
     }
-}    
+}
+
+function addEdge(graph, sourceVertex, targetVertex) {
+    const newEdge = new Edge(sourceVertex, targetVertex);
+
+    console.log(newEdge);
+
+    graph.addEdge(newEdge);
+
+    sourceVertex.edges.push(newEdge);
+    targetVertex.edges.push(newEdge);
+}
 
 function createGraphFromJson(json, svgContainer) {
     const graph = new Graph();
@@ -132,6 +146,42 @@ function createGraphFromJson(json, svgContainer) {
     //graph.edgeSet.forEach(edge => svgElement.appendChild(edge.createSvgElement()));
 
     return graph;
+}
+
+function addVertexWithPreferentialAttachment(graph, g, simulation) {
+    // Generate a unique ID for the new vertex
+    const newVertexId = `${graph.vertexSet.length}`;
+    const newVertex = new Vertex(Math.random() * 800, Math.random() * 600, newVertexId);
+    graph.addVertex(newVertex);
+
+    // Calculate the total degree of the graph
+    let totalDegree = 0;
+    graph.vertexSet.forEach(vertex => {
+        totalDegree += vertex.edges ? vertex.edges.length : 0;
+    });
+
+    // Add edges to existing vertices based on preferential attachment
+    graph.vertexSet.forEach(vertex => {
+        if (vertex !== newVertex && vertex.edges.length > 0) { // Exclude the new vertex and isolated vertices
+            const attachmentProbability = vertex.edges.length / totalDegree;
+            if (Math.random() < attachmentProbability) {
+                addEdge(graph, newVertex, vertex); // Use the updated addEdge method
+            }
+        }
+    });
+    simulation.nodes(graph.vertexSet.map(v => v.position));
+
+    // Update the simulation links with any new edges
+    const updatedLinks = graph.edgeSet.map(e => ({
+        source: graph.vertexSet.indexOf(e.vertex1),
+        target: graph.vertexSet.indexOf(e.vertex2)
+    }));
+    simulation.force("link").links(updatedLinks);
+
+    // Restart the simulation with the new data
+    simulation.alpha(1).restart();
+    // Redraw the graph with the new vertex and edges
+    graph.draw(g.node(), simulation);; // You'll need to implement this function based on your existing graph drawing logic
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -162,22 +212,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     let graph = createGraphFromJson(graphData, svg.node());
 
         // Setup the force layout
-    const nodes = graph.vertexSet.map(v => v.position);
-    const links = graph.edgeSet.map(e => ({
-        source: graph.vertexSet.indexOf(e.vertex1),
-        target: graph.vertexSet.indexOf(e.vertex2)
-    }));
+    //const nodes = graph.vertexSet.map(v => v.position);
+    //const links = graph.edgeSet.map(e => ({
+        //source: graph.vertexSet.indexOf(e.vertex1),
+        //target: graph.vertexSet.indexOf(e.vertex2)
+    //}));
 
+    
     // Initialize the simulation
-    const simulation = d3.forceSimulation(nodes)
-        .force("link", d3.forceLink(links).id(d => d.index))
+    const simulation = d3.forceSimulation(graph.vertexSet.map(v => v.position))
+        .force("link", d3.forceLink(graph.edgeSet.map(e => ({
+            source: graph.vertexSet.indexOf(e.vertex1),
+            target: graph.vertexSet.indexOf(e.vertex2)
+        }))).id(d => d.index))
         .force("charge", d3.forceManyBody().strength(-600))
         .force("center", d3.forceCenter(width / 2, height / 2));
+    
+    document.getElementById('addVertexBtn').addEventListener('click', () => {
+        addVertexWithPreferentialAttachment(graph, g, simulation);
+    });
 
     // Handle the simulation "tick"
     simulation.on("tick", () => {
         // Update vertex positions based on simulation
-        nodes.forEach((d, i) => {
+        graph.vertexSet.map(v => v.position).forEach((d, i) => {
             graph.vertexSet[i].position.x = d.x;
             graph.vertexSet[i].position.y = d.y;
         });
