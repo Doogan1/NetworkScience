@@ -15,4 +15,17 @@
 
 svg {
     background-color: gainsboro;
+    border: 3px solid silver;
+}
+
+#addVertexBtn {
+    margin-right: 10px;
+}
+
+.card-min-width-800 {
+    width: 850px;
+}
+
+.card-min-width-500 {
+    width: 550px;
 }

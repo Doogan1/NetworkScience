@@ -10,25 +10,48 @@
 </head>
 <body>
     <div class="container-fluid">
-        <!-- Explanation Section -->
-        <div class="row mt-4">
-            <div class="col-12">
-                <h1>Welcome to the Preferential Attachment Network Growth Visualization</h1>
-                <p>This interactive dashboard visualizes the Barabási-Albert model for generating random scale-free networks. The model operates on two main principles: growth and preferential attachment. You can add new vertices to the network using the "Add Vertex" button, which will connect to existing nodes with a probability proportional to the number of links they already have, illustrating how popular nodes get more connections over time.</p>
-                <p>Use the app to explore how networks evolve and observe the degree distribution as you add more vertices, which should follow a power-law distribution characteristic of scale-free networks.</p>
-            </div>
+
+        <!-- Page Heading -->
+        <div class="d-sm-flex align-items-center justify-content-between mb-4">
+            <h1 class="h3 mb-0 text-gray-800">Network Graph Visualization</h1>
         </div>
-        <!-- Visualization and Controls Section -->
-        <div class="row justify-content-center mt-5">
-            <div id="network" class="col-md-8 mb-3"></div>
-            <div class="col-md-4">
-                <div class="btn-group mb-3" role="group" aria-label="Control Buttons">
-                    <button type="button" id="addVertexBtn" class="btn btn-primary">Add Vertex</button>
+    
+        <!-- Content Row for Network Graph and Degree Distribution Chart -->
+        <div class="row">
+    
+            <!-- Network Graph Column -->
+            <div class="col-xl-8 col-lg-7">
+                <div class="card shadow mb-4 card-min-width-800">
+                    <div id="network-card" class="card-header py-3 ">
+                        <h6 class="m-0 font-weight-bold text-primary">Network Graph</h6>
+                    </div>
+                    <div class="card-body">
+                        <div id="network" style="height: 600px;"></div> <!-- Adjust height as needed -->
+                        <div class="btn-group mt-3" role="group" aria-label="Graph Controls">
+                            <button type="button" id="addVertexBtn" class="btn btn-primary">Add Vertex</button>
+                            <button type="button" id="resetGraphBtn" class="btn btn-danger">Reset Graph</button>
+                        </div>
+                    </div>
                 </div>
-                <svg id="degreeDistributionChart" width="500" height="300"></svg>
             </div>
+    
+            <!-- Degree Distribution Chart Column -->
+            <div class="col-xl-4 col-lg-5">
+                <div id="degree-distribution-card" class="card shadow mb-4 card-min-width-500">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Degree Distribution</h6>
+                    </div>
+                    <div class="card-body">
+                        <svg id="degreeDistributionChart" width="500" height="300"></svg>
+                    </div>
+                </div>
+            </div>
+    
         </div>
+        <!-- End of Content Row -->
+    
     </div>
+    <!-- /.container-fluid -->
     <script src="script.js"></script>
 </body>
 </html>

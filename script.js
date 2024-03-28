@@ -134,8 +134,6 @@ function addEdge(graph, sourceVertex, targetVertex) {
 
     graph.addEdge(newEdge);
 
-    sourceVertex.edges.push(newEdge);
-    targetVertex.edges.push(newEdge);
 }
 
 function createGraphFromJson(json, svgContainer) {
@@ -183,20 +181,16 @@ function addVertexWithPreferentialAttachment(graph, g, simulation) {
 
     while (!edgeAdded) {
         graph.vertexSet.forEach(vertex => {
-        if (vertex !== newVertex && vertex.edges.length > 0) { // Exclude the new vertex and isolated vertices
-            const attachmentProbability = vertex.edges.length / totalDegree;
-            if (Math.random() < attachmentProbability) {
-                addEdge(graph, newVertex, vertex); // Use the updated addEdge method
-                edgeAdded = true;
+            if (vertex !== newVertex && vertex.edges.length > 0) { // Exclude the new vertex and isolated vertices
+                const attachmentProbability = vertex.edges.length / totalDegree;
+                if (Math.random() < attachmentProbability) {
+                    addEdge(graph, newVertex, vertex); // Use the updated addEdge method
+                    edgeAdded = true;
+                }
             }
-        }
-    });
+        });
     }
-    
 
-    if (!edgeAdded) {
-
-    }
     simulation.nodes(graph.vertexSet.map(v => v.position));
 
     // Update the simulation links with any new edges
@@ -210,7 +204,7 @@ function addVertexWithPreferentialAttachment(graph, g, simulation) {
     simulation.alpha(1).restart();
     percentiles = calculateDegreePercentiles(graph);
     // Redraw the graph with the new vertex and edges
-    graph.draw(g.node(), simulation, percentiles);; // You'll need to implement this function based on your existing graph drawing logic
+    graph.draw(g.node(), simulation, percentiles); // You'll need to implement this function based on your existing graph drawing logic
 }
 
 function chartDataFromGraph(graph) {
@@ -228,6 +222,8 @@ function chartDataFromGraph(graph) {
             degreeCounts[degree] = 1;
         }
     });
+
+
 
     // Convert the degreeCounts object to an array suitable for D3
     const chartData = Object.keys(degreeCounts).map(degree => ({
@@ -340,6 +336,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         degreeChartData = chartDataFromGraph(graph);
         drawDegreeDistributionChart(degreeChartData);
     });
+
+    document.getElementById('resetGraphBtn').addEventListener('click', () => {
+        resetGraph(svg.node(), g); // Pass the SVG container where your graph is drawn
+    });
     
     // Handle the simulation "tick"
     simulation.on("tick", () => {
@@ -352,3 +352,40 @@ document.addEventListener('DOMContentLoaded', async () => {
         graph.draw(g.node(), simulation, percentiles);
     });
 });
+
+async function resetGraph(svgContainer, g) {
+    try {
+        const res = await fetch('petersen_graph_data.json');
+        const graphData = await res.json();
+        // Assuming `graph` is accessible and has a method to clear its current state
+        //graph.clear(); // Clear current graph state
+        const graph = createGraphFromJson(graphData, svgContainer);
+        // You might need to reapply the force simulation setup here as well
+     // Reinitialize simulation with new/old data
+        var width = 800, height = 600;
+        const simulation = d3.forceSimulation(graph.vertexSet.map(v => v.position))
+        .force("link", d3.forceLink(graph.edgeSet.map(e => ({
+            source: graph.vertexSet.indexOf(e.vertex1),
+            target: graph.vertexSet.indexOf(e.vertex2)
+        }))).id(d => d.index))
+        .force("charge", d3.forceManyBody().strength(-600))
+        .force("center", d3.forceCenter(width / 2, height / 2));
+
+        simulation.nodes(graph.vertexSet.map(v => v.position));
+
+        // Update the simulation links with any new edges
+        const updatedLinks = graph.edgeSet.map(e => ({
+            source: graph.vertexSet.indexOf(e.vertex1),
+            target: graph.vertexSet.indexOf(e.vertex2)
+        }));
+        simulation.force("link").links(updatedLinks);
+    
+        // Restart the simulation with the new data
+        simulation.alpha(1).restart();
+        percentiles = calculateDegreePercentiles(graph);
+        // Redraw the graph with the new vertex and edges
+        graph.draw(g.node(), simulation, percentiles);
+    } catch (error) {
+        console.error("Failed to reset the graph:", error);
+    }
+}
