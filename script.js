@@ -314,7 +314,7 @@ let graph;
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Width and height
-    var width = 800, height = 750;
+    var width = 800, height = 500;
     let isVertexBeingDragged = false;
         // Setup the SVG and the group (g) element
     var svg = d3.select("#network").append("svg")
