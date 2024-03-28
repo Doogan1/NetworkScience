@@ -11,10 +11,10 @@
     stroke-width: 1;
 }
 
-.circle:hover {
+/*.circle:hover {
     fill: yellow;
     cursor: pointer;
-}
+}*/
 
 svg {
     background-color: gainsboro;
@@ -35,6 +35,17 @@ svg {
 h1 {
     text-align: center;
 }
+
+#tooltip {
+    transition: opacity 0.2s;
+    border-radius: 5px;
+    text-align: center;
+    color: #333;
+    font-size: 14px;
+    max-width: 200px; /* Prevents the tooltip from being too wide */
+    z-index: 10; /* Ensure it's above other elements */
+}
+
 @media (max-width: 991px) { /* Adjust based on Bootstrap's breakpoints if needed */
     .mb-4-custom {
         margin-bottom: 1.5rem !important; /* Increase spacing between cards on smaller screens */

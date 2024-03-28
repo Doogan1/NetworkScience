@@ -60,7 +60,19 @@ class Vertex {
             .merge(d3Circle) // Merge enter and update selections
             .attr('cx', d => d.x)
             .attr('cy', d => d.y)
-            .call(simulation ? defineDragBehavior(simulation) : () => {});
+            .call(simulation ? defineDragBehavior(simulation) : () => {})
+            .on('mouseover', (event, d) => {
+                d3.select(event.target).style('fill', 'yellow');
+                d3.select('#tooltip')
+                    .style('opacity', 1)
+                    .style('left', `${event.pageX + 10}px`)
+                    .style('top', `${event.pageY + 10}px`)
+                    .html(`ID: ${this.id}<br>Degree: ${this.edges.length}`);
+            })
+            .on('mouseout', () => {
+                d3.select(event.target).style('fill', fillColor);
+                d3.select('#tooltip').style('opacity', 0);
+            });
     
         // If the circles are already created, this will update their positions.
         d3Circle.attr('cx', d => d.x)
@@ -126,6 +138,11 @@ class Graph {
             const fillColor = colorScale(percentiles[i]);
             vertex.draw(g, simulation, fillColor);
         });
+    }
+
+    clear() {
+        this.vertexSet = [];
+        this.edgeSet = [];
     }
 }
 
@@ -293,6 +310,7 @@ function updateGraphStatistics(graph) {
     document.getElementById('avg-degree').textContent = avgDeg.toFixed(2);
 }
 
+let graph;
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Width and height
@@ -319,7 +337,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const res = await fetch('petersen_graph_data.json');
     const graphData = await res.json();
 
-    let graph = createGraphFromJson(graphData, svg.node());
+    graph = createGraphFromJson(graphData, svg.node());
 
         // Setup the force layout
     //const nodes = graph.vertexSet.map(v => v.position);
@@ -375,6 +393,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('addVertexBtn').addEventListener('mouseleave', stopAddingVertex);
 
     document.getElementById('resetGraphBtn').addEventListener('click', () => {
+        graph.clear();
         resetGraph(svg.node(), g); // Pass the SVG container where your graph is drawn
     });
     
@@ -395,11 +414,12 @@ async function resetGraph(svgContainer, g) {
         const res = await fetch('petersen_graph_data.json');
         const graphData = await res.json();
         // Assuming `graph` is accessible and has a method to clear its current state
-        //graph.clear(); // Clear current graph state
-        const graph = createGraphFromJson(graphData, svgContainer);
+        Object.assign(graph, createGraphFromJson(graphData, svgContainer));
         // You might need to reapply the force simulation setup here as well
+        degreeChartData = chartDataFromGraph(graph);
+        drawDegreeDistributionChart(degreeChartData);
      // Reinitialize simulation with new/old data
-        var width = 800, height = 600;
+        var width = 800, height = 750;
         const simulation = d3.forceSimulation(graph.vertexSet.map(v => v.position))
         .force("link", d3.forceLink(graph.edgeSet.map(e => ({
             source: graph.vertexSet.indexOf(e.vertex1),
