@@ -1,3 +1,6 @@
+* {
+    box-sizing: border-box;
+}
 .edge {
     stroke:blueviolet;
     stroke-width: 4;
@@ -28,4 +31,12 @@ svg {
 
 .card-min-width-500 {
     width: 550px;
+}
+h1 {
+    text-align: center;
+}
+@media (max-width: 991px) { /* Adjust based on Bootstrap's breakpoints if needed */
+    .mb-4-custom {
+        margin-bottom: 1.5rem !important; /* Increase spacing between cards on smaller screens */
+    }
 }

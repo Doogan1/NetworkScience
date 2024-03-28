@@ -241,9 +241,11 @@ function drawDegreeDistributionChart(data) {
     const svg = d3.select("#degreeDistributionChart");
     svg.selectAll("*").remove(); // Clear the SVG for redrawing
 
-    const margin = { top: 20, right: 20, bottom: 30, left: 40 },
-          width = +svg.attr("width") - margin.left - margin.right,
-          height = +svg.attr("height") - margin.top - margin.bottom;
+    const margin = { top: 20, right: 20, bottom: 30, left: 40 }
+
+    const boundingRect = svg.node().getBoundingClientRect();
+    const width = boundingRect.width - margin.left - margin.right;
+    const height = boundingRect.height - margin.top - margin.bottom;
 
     // Create a scale for your x axis based on degree
     const x = d3.scaleBand()
@@ -280,15 +282,25 @@ function drawDegreeDistributionChart(data) {
      .attr("fill", "steelblue"); // Add fill to customize bar color
 }
 
+function updateGraphStatistics(graph) {
+    const vertexCount = graph.vertexSet.length;
+    const edgeCount = graph.edgeSet.length;
+    const avgDeg = (2 * edgeCount) / vertexCount;
+
+    // Update the HTML content
+    document.getElementById('vertex-count').textContent = vertexCount;
+    document.getElementById('edge-count').textContent = edgeCount;
+    document.getElementById('avg-degree').textContent = avgDeg.toFixed(2);
+}
 
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Width and height
-    var width = 800, height = 600;
+    var width = 800, height = 750;
     let isVertexBeingDragged = false;
         // Setup the SVG and the group (g) element
     var svg = d3.select("#network").append("svg")
-        .attr("width", width)
+        .attr("width", "100%")
         .attr("height", height)
         .call(d3.zoom().on("zoom", function (event) {
             if (!isVertexBeingDragged) {
@@ -315,7 +327,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         //source: graph.vertexSet.indexOf(e.vertex1),
         //target: graph.vertexSet.indexOf(e.vertex2)
     //}));
-
+    //calculate order and size and display this to the user
+    updateGraphStatistics(graph);
     //calculate degree distribution and then draw the chart
     degreeChartData = chartDataFromGraph(graph);
     drawDegreeDistributionChart(degreeChartData);
@@ -331,11 +344,35 @@ document.addEventListener('DOMContentLoaded', async () => {
         .force("charge", d3.forceManyBody().strength(-600))
         .force("center", d3.forceCenter(width / 2, height / 2));
     
-    document.getElementById('addVertexBtn').addEventListener('click', () => {
+    // document.getElementById('addVertexBtn').addEventListener('click', () => {
+    //     addVertexWithPreferentialAttachment(graph, g, simulation);
+    //     degreeChartData = chartDataFromGraph(graph);
+    //     drawDegreeDistributionChart(degreeChartData);
+    // });
+    
+    let addVertexInterval;
+
+    const addVertexRepeatedly = () => {
         addVertexWithPreferentialAttachment(graph, g, simulation);
+        updateGraphStatistics(graph);
         degreeChartData = chartDataFromGraph(graph);
         drawDegreeDistributionChart(degreeChartData);
+    };
+
+    document.getElementById('addVertexBtn').addEventListener('mousedown', () => {
+        addVertexRepeatedly(); // Add once immediately for responsiveness
+        addVertexInterval = setInterval(addVertexRepeatedly, 250); // Adjust interval as needed
     });
+
+    const stopAddingVertex = () => {
+        if (addVertexInterval) {
+            clearInterval(addVertexInterval);
+            addVertexInterval = null;
+        }
+    };
+
+    document.getElementById('addVertexBtn').addEventListener('mouseup', stopAddingVertex);
+    document.getElementById('addVertexBtn').addEventListener('mouseleave', stopAddingVertex);
 
     document.getElementById('resetGraphBtn').addEventListener('click', () => {
         resetGraph(svg.node(), g); // Pass the SVG container where your graph is drawn

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Network Graph Visualization</title>
+    <title>Preferential Attachment Visualization</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="style.css">
@@ -12,41 +12,76 @@
     <div class="container-fluid">
 
         <!-- Page Heading -->
-        <div class="d-sm-flex align-items-center justify-content-between mb-4">
-            <h1 class="h3 mb-0 text-gray-800">Network Graph Visualization</h1>
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                    
+                    <h1 class="h1 mb-0 text-gray-800">Preferential Attachment Visualization</h1>
+                    
+                </div>
+            </div>
         </div>
+        
     
         <!-- Content Row for Network Graph and Degree Distribution Chart -->
-        <div class="row">
-    
+        <div class="row justify-content-center mt-5">
+            <div class="col-sm-4 ml-3">
+                <div class="row">
+                    <div id="instructions-card" class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Instructions and Information</h6>
+                        </div>
+                        <div class="card-body">
+                            <ul>
+                                <li>The starting graph is the Petersen graph which is 3-regular.</li>
+                                <li>Click the add vertex button to add a new vertex.</li>
+                                <li>The new vertex will link up with an existing vertex with probability proportional to the degree of the existing vertex.</li>
+                                <li>This means that it is more likely for the newly added vertex to link to vertices of high degree.</li>
+                                <li>Vertices are colored based on their percentile in the degree distribution, so a vertex that appears more red is at the higher end of the degree distribution.</li>
+                                <li>Continue to click (or click and hold) the add vertex button to see how the degree distribution changes as this process continues.</li>
+                                <li>The key observation here is that the degree distribution follows a power law as more vertices are added according to this preferential attachment rule.</li>
+                                <li>You can notice this by observing the long tail of the distribution which means that a small fraction of the vertices have high degree while most vertices have low degree.</li>
+                                <li>A network whose degree distribution follows a power law is known as a scale-free network.</li>
+                                <li>For more information visit <a href="https://en.wikipedia.org/wiki/Barab%C3%A1si%E2%80%93Albert_model">Barabasi-Albert Model Wikipedia Entry</a>.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div> 
+                <div class="row justify-content-center">
+                    <div id="degree-distribution-card" class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Degree Distribution</h6>
+                        </div>
+                        <div class="card-body">
+                            <svg id="degreeDistributionChart" width="100%" height="190"></svg>
+                        </div>
+                    </div>
+                </div>   
+            </div>
             <!-- Network Graph Column -->
-            <div class="col-xl-8 col-lg-7">
-                <div class="card shadow mb-4 card-min-width-800">
+            <div class="col-xl-6">
+                <div class="card shadow mb-4 ">
                     <div id="network-card" class="card-header py-3 ">
-                        <h6 class="m-0 font-weight-bold text-primary">Network Graph</h6>
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            Network Graph - 
+                            # of Vertices (order, n): <span id="vertex-count"></span>
+                            |
+                            # of Edges (size, m): <span id="edge-count"></span>
+                            |
+                            Avg Degree (2m / n): <span id="avg-degree"></span>
+                        </h6>
                     </div>
                     <div class="card-body">
-                        <div id="network" style="height: 600px;"></div> <!-- Adjust height as needed -->
+                        <div id="network" style="height: 750px;"></div> <!-- Adjust height as needed -->
                         <div class="btn-group mt-3" role="group" aria-label="Graph Controls">
-                            <button type="button" id="addVertexBtn" class="btn btn-primary">Add Vertex</button>
+                            <button type="button" id="addVertexBtn" class="btn btn-primary" data-toggle="tooltip" title="Hold down to add vertices continuously">Add Vertex</button>
                             <button type="button" id="resetGraphBtn" class="btn btn-danger">Reset Graph</button>
                         </div>
                     </div>
                 </div>
             </div>
-    
             <!-- Degree Distribution Chart Column -->
-            <div class="col-xl-4 col-lg-5">
-                <div id="degree-distribution-card" class="card shadow mb-4 card-min-width-500">
-                    <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Degree Distribution</h6>
-                    </div>
-                    <div class="card-body">
-                        <svg id="degreeDistributionChart" width="500" height="300"></svg>
-                    </div>
-                </div>
-            </div>
-    
+            
         </div>
         <!-- End of Content Row -->
     
