@@ -26,6 +26,16 @@ function defineDragBehavior(simulation) {
         .on("end", dragended);
 }
 
+function calculateDegreePercentiles(graph) {
+    const degrees = graph.vertexSet.map(vertex => vertex.edges.length || 0); // Assuming `edges` count as degree
+    const sortedDegrees = [...degrees].sort((a, b) => a - b);
+    const maxDegree = sortedDegrees[sortedDegrees.length - 1];
+
+    // Calculate percentile for each degree
+    const percentiles = degrees.map(degree => degree / maxDegree);
+    return percentiles;
+}
+
 class Vertex {
     constructor(x, y, id) {
         this.position = { x, y };
@@ -33,7 +43,7 @@ class Vertex {
         this.edges = [];
     }
 
-    draw(g, simulation) {
+    draw(g, simulation, fillColor) {
         // Convert the container to a D3 selection if it's not already one
         let gSelection = d3.select(g);
     
@@ -45,6 +55,7 @@ class Vertex {
         d3Circle.enter().append('circle')
             .attr('class', 'circle')
             .attr('id', `vertex-${this.id}`)
+            .attr('fill', fillColor)
             .attr('r', 20)
             .merge(d3Circle) // Merge enter and update selections
             .attr('cx', d => d.x)
@@ -96,25 +107,30 @@ class Graph {
         this.vertexSet[edge.vertex2.id].edges.push(edge);
     }
 
-    draw(g, simulation) {
+    draw(g, simulation, percentiles) {
         // Clear previous SVG elements
         g.innerHTML = '';
+
+        //define color scale to be used on coloring vertices based on degree percentile rank
+        const colorScale = d3.scaleLinear()
+                     .domain([0, 1]) // From 0% to 100%
+                     .range(["#fff", "red"]);
 
         // Draw edges
         this.edgeSet.forEach(edge => edge.draw(g));
 
+        //const percentiles = calculateDegreePercentiles(this);
+
         // Draw vertices
-        this.vertexSet.forEach(vertex => {
-            // Ensure 'this' inside 'draw' refers to the 'Vertex' instance
-            vertex.draw(g, simulation);
+        this.vertexSet.forEach((vertex, i) => {
+            const fillColor = colorScale(percentiles[i]);
+            vertex.draw(g, simulation, fillColor);
         });
     }
 }
 
 function addEdge(graph, sourceVertex, targetVertex) {
     const newEdge = new Edge(sourceVertex, targetVertex);
-
-    console.log(newEdge);
 
     graph.addEdge(newEdge);
 
@@ -154,6 +170,9 @@ function addVertexWithPreferentialAttachment(graph, g, simulation) {
     const newVertex = new Vertex(Math.random() * 800, Math.random() * 600, newVertexId);
     graph.addVertex(newVertex);
 
+    // introduce flag to redraw edges if no edges are drawn
+
+    let edgeAdded = false;
     // Calculate the total degree of the graph
     let totalDegree = 0;
     graph.vertexSet.forEach(vertex => {
@@ -161,14 +180,23 @@ function addVertexWithPreferentialAttachment(graph, g, simulation) {
     });
 
     // Add edges to existing vertices based on preferential attachment
-    graph.vertexSet.forEach(vertex => {
+
+    while (!edgeAdded) {
+        graph.vertexSet.forEach(vertex => {
         if (vertex !== newVertex && vertex.edges.length > 0) { // Exclude the new vertex and isolated vertices
             const attachmentProbability = vertex.edges.length / totalDegree;
             if (Math.random() < attachmentProbability) {
                 addEdge(graph, newVertex, vertex); // Use the updated addEdge method
+                edgeAdded = true;
             }
         }
     });
+    }
+    
+
+    if (!edgeAdded) {
+
+    }
     simulation.nodes(graph.vertexSet.map(v => v.position));
 
     // Update the simulation links with any new edges
@@ -180,9 +208,83 @@ function addVertexWithPreferentialAttachment(graph, g, simulation) {
 
     // Restart the simulation with the new data
     simulation.alpha(1).restart();
+    percentiles = calculateDegreePercentiles(graph);
     // Redraw the graph with the new vertex and edges
-    graph.draw(g.node(), simulation);; // You'll need to implement this function based on your existing graph drawing logic
+    graph.draw(g.node(), simulation, percentiles);; // You'll need to implement this function based on your existing graph drawing logic
 }
+
+function chartDataFromGraph(graph) {
+    // Object to store degree counts
+    const degreeCounts = {};
+
+    // Calculate degrees (Assuming each edge contributes to the degree of both vertices)
+    graph.vertexSet.forEach(vertex => {
+        // The degree is simply the length of the edges array for the vertex
+        const degree = vertex.edges.length || 0; // Fallback to 0 if no edges are defined
+        // Increment the count for this degree
+        if (degreeCounts[degree]) {
+            degreeCounts[degree] += 1;
+        } else {
+            degreeCounts[degree] = 1;
+        }
+    });
+
+    // Convert the degreeCounts object to an array suitable for D3
+    const chartData = Object.keys(degreeCounts).map(degree => ({
+        degree: parseInt(degree), // Convert key back to integer
+        count: degreeCounts[degree]
+    }));
+
+    // Sort by degree to ensure the chart is ordered
+    chartData.sort((a, b) => a.degree - b.degree);
+
+    return chartData;
+}
+
+function drawDegreeDistributionChart(data) {
+    const svg = d3.select("#degreeDistributionChart");
+    svg.selectAll("*").remove(); // Clear the SVG for redrawing
+
+    const margin = { top: 20, right: 20, bottom: 30, left: 40 },
+          width = +svg.attr("width") - margin.left - margin.right,
+          height = +svg.attr("height") - margin.top - margin.bottom;
+
+    // Create a scale for your x axis based on degree
+    const x = d3.scaleBand()
+                .range([0, width])
+                .padding(0.1)
+                .domain(data.map(d => d.degree));
+
+    // Create a scale for your y axis based on count
+    const y = d3.scaleLinear()
+                .range([height, 0])
+                .domain([0, d3.max(data, d => d.count)]);
+
+    const g = svg.append("g")
+                 .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    // X Axis
+    g.append("g")
+     .attr("transform", `translate(0,${height})`)
+     .call(d3.axisBottom(x));
+
+    // Y Axis
+    g.append("g")
+     .call(d3.axisLeft(y));
+
+    // Bars
+    g.selectAll(".bar")
+     .data(data)
+     .enter().append("rect")
+     .attr("class", "bar")
+     .attr("x", d => x(d.degree))
+     .attr("y", d => y(d.count))
+     .attr("width", x.bandwidth())
+     .attr("height", d => height - y(d.count))
+     .attr("fill", "steelblue"); // Add fill to customize bar color
+}
+
+
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Width and height
@@ -198,7 +300,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }))
         //.append("g");
-
+    
     var g = svg.append("g"); // All visual elements will be added to this group
 
     
@@ -218,7 +320,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         //target: graph.vertexSet.indexOf(e.vertex2)
     //}));
 
-    
+    //calculate degree distribution and then draw the chart
+    degreeChartData = chartDataFromGraph(graph);
+    drawDegreeDistributionChart(degreeChartData);
+
+    //calculate percentiles for coloring vertices
+    percentiles = calculateDegreePercentiles(graph);
     // Initialize the simulation
     const simulation = d3.forceSimulation(graph.vertexSet.map(v => v.position))
         .force("link", d3.forceLink(graph.edgeSet.map(e => ({
@@ -230,8 +337,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     document.getElementById('addVertexBtn').addEventListener('click', () => {
         addVertexWithPreferentialAttachment(graph, g, simulation);
+        degreeChartData = chartDataFromGraph(graph);
+        drawDegreeDistributionChart(degreeChartData);
     });
-
+    
     // Handle the simulation "tick"
     simulation.on("tick", () => {
         // Update vertex positions based on simulation
@@ -240,6 +349,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             graph.vertexSet[i].position.y = d.y;
         });
         // Redraw the graph
-        graph.draw(g.node(), simulation);
+        graph.draw(g.node(), simulation, percentiles);
     });
 });
