@@ -37,7 +37,7 @@
                             <ul>
                                 <li>The starting graph is the Petersen graph which is 3-regular.</li>
                                 <li>Click the add vertex button to add a new vertex.</li>
-                                <li>The new vertex will link up with an existing vertex with probability proportional to the degree of the existing vertex.</li>
+                                <li>The new vertex will link up wi th an existing vertex with probability proportional to the degree of the existing vertex.</li>
                                 <li>This means that it is more likely for the newly added vertex to link to vertices of high degree.</li>
                                 <li>Vertices are colored based on their percentile in the degree distribution, so a vertex that appears more red is at the higher end of the degree distribution.</li>
                                 <li>Continue to click (or click and hold) the add vertex button to see how the degree distribution changes as this process continues.</li>
@@ -55,7 +55,7 @@
                             <h6 class="m-0 font-weight-bold text-primary">Degree Distribution</h6>
                         </div>
                         <div class="card-body">
-                            <svg id="degreeDistributionChart" width="100%" height="190"></svg>
+                            <svg id="degreeDistributionChart" width="400" height="190"></svg>
                         </div>
                     </div>
                 </div>   
@@ -78,6 +78,29 @@
                         <div class="btn-group mt-3" role="group" aria-label="Graph Controls">
                             <button type="button" id="addVertexBtn" class="btn btn-primary" data-toggle="tooltip" title="Hold down to add vertices continuously">Add Vertex</button>
                             <button type="button" id="resetGraphBtn" class="btn btn-danger">Reset Graph</button>
+
+                            <div class="vertex-mode-selection ml-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="vertexAddMode" id="defaultMode" value="default" checked>
+                                    <label class="form-check-label" for="defaultMode">
+                                        Default Mode
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="vertexAddMode" id="specifyEdgesMode" value="specifyEdges">
+                                    <label class="form-check-label" for="specifyEdgesMode">
+                                        Specify Number of Edges
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="vertexAddModeModifier" id="noPrefAttachMode" value="noPrefAttach">
+                                    <label class="form-check-label" for="noPrefAttachMode">
+                                        No Preferential Attachment
+                                    </label>
+                                </div>
+                                <!-- Hidden Input for specifying k -->
+                                <input type="number" id="numEdgesInput" class="form-control" placeholder="Enter number of edges (k)" style="display: none;">
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -46,6 +46,7 @@ h1 {
     z-index: 10; /* Ensure it's above other elements */
 }
 
+
 @media (max-width: 991px) { /* Adjust based on Bootstrap's breakpoints if needed */
     .mb-4-custom {
         margin-bottom: 1.5rem !important; /* Increase spacing between cards on smaller screens */

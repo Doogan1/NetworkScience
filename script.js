@@ -179,8 +179,78 @@ function createGraphFromJson(json, svgContainer) {
     return graph;
 }
 
+function addKVerticesWithPreferentialAttachment(graph, g, simulation, k) {
+    const size = graph.edgeSet.length;
+    const order = graph.vertexSet.length;
+    // Ensure k is less than or equal to the number of available vertices
+    if (k > order) {
+        alert("Please select a value of k less than or equal to the number of vertices.")
+        return;
+    }
+    const isNoPrefAttachMode = document.getElementById('noPrefAttachMode').checked;
+
+    // Calculate weights for weighted sampling.
+    console.log(`noPrefAttachMode is ${isNoPrefAttachMode}`)
+    let weights = [];
+    if (isNoPrefAttachMode) {
+        weights = graph.vertexSet.map(vertex => 1 / order);
+        console.log(weights);
+    } else {
+        weights = graph.vertexSet.map(vertex => vertex.edges.length / (2 * size));
+    }
+    
+    // Create the new vertex
+    const newVertexId = `${graph.vertexSet.length}`;
+    const newVertex = new Vertex(Math.random() * 800, Math.random() * 600, newVertexId);
+    graph.addVertex(newVertex);
+    
+    
+
+    function weightedSampleWithoutReplacement(k, weights) {
+        let sampledIndices = [];
+        for (let i = 0; i < k; i++) {
+            let index = -1, r = Math.random();
+            while (r > 0) {
+                index++;
+                r -= weights[index];
+            }
+
+            // Add the selected index to the sampled list
+            sampledIndices.push(index);
+            // Will set the weight of the chosen vertex to 0, so we need to scale the other weights so they all add up to 1 
+            weights = weights.map(weight => weight / (1 - weights[index]));
+            // Set the weights of the chosen vertex to 0- to prevent re-selection
+            weights[index] = 0;
+            
+        }
+        return sampledIndices;
+    }
+
+    let sampledIndices = weightedSampleWithoutReplacement(k, weights);
+    // connect the new vertex to the sampled vertices
+    sampledIndices.forEach(index => {
+        //Diagnostic console.log(`Preparing to add a new edge between ${newVertex.id} and ${graph.vertexSet[index].id}.  The index is ${index}`);
+        addEdge(graph, newVertex, graph.vertexSet[index]);
+    });
+
+    simulation.nodes(graph.vertexSet.map(v => v.position));
+    const updatedLinks = graph.edgeSet.map(e => ({
+        source: graph.vertexSet.indexOf(e.vertex1),
+        target: graph.vertexSet.indexOf(e.vertex2)
+    }));
+    simulation.force("link").links(updatedLinks);
+    simulation.alpha(1).restart();
+    percentiles = calculateDegreePercentiles(graph);
+    graph.draw(g.node(), simulation, percentiles);
+}
+
 function addVertexWithPreferentialAttachment(graph, g, simulation) {
     // Generate a unique ID for the new vertex
+    const order = graph.vertexSet.length;
+    const size = graph.edgeSet.length;
+
+    const isNoPrefAttachMode = document.getElementById('noPrefAttachMode').checked;
+
     const newVertexId = `${graph.vertexSet.length}`;
     const newVertex = new Vertex(Math.random() * 800, Math.random() * 600, newVertexId);
     graph.addVertex(newVertex);
@@ -188,18 +258,18 @@ function addVertexWithPreferentialAttachment(graph, g, simulation) {
     // introduce flag to redraw edges if no edges are drawn
 
     let edgeAdded = false;
-    // Calculate the total degree of the graph
-    let totalDegree = 0;
-    graph.vertexSet.forEach(vertex => {
-        totalDegree += vertex.edges ? vertex.edges.length : 0;
-    });
 
     // Add edges to existing vertices based on preferential attachment
 
     while (!edgeAdded) {
         graph.vertexSet.forEach(vertex => {
             if (vertex !== newVertex && vertex.edges.length > 0) { // Exclude the new vertex and isolated vertices
-                const attachmentProbability = vertex.edges.length / totalDegree;
+                let attachmentProbability = 0;
+                if (isNoPrefAttachMode) {
+                    attachmentProbability = 1 / order;
+                } else {
+                    attachmentProbability = vertex.edges.length / (2 * size);
+                }
                 if (Math.random() < attachmentProbability) {
                     addEdge(graph, newVertex, vertex); // Use the updated addEdge method
                     edgeAdded = true;
@@ -367,19 +437,39 @@ document.addEventListener('DOMContentLoaded', async () => {
     //     degreeChartData = chartDataFromGraph(graph);
     //     drawDegreeDistributionChart(degreeChartData);
     // });
-    
+    // listen for changes in the vertex add mode selection and have the numEdgesInput display if that mode is selected
+    document.querySelectorAll('input[name="vertexAddMode"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            // Show the input field if the "Specify Number of Edges" mode is selected
+            if(document.getElementById('specifyEdgesMode').checked) {
+                document.getElementById('numEdgesInput').style.display = 'block';
+            } else {
+                document.getElementById('numEdgesInput').style.display = 'none';
+            }
+        });
+    });
+
     let addVertexInterval;
 
-    const addVertexRepeatedly = () => {
-        addVertexWithPreferentialAttachment(graph, g, simulation);
+    const addVertexRepeatedly = (k) => {
+        if (!k) {
+            addVertexWithPreferentialAttachment(graph, g, simulation);
+        } else {
+            addKVerticesWithPreferentialAttachment(graph, g, simulation, k);
+        }
         updateGraphStatistics(graph);
         degreeChartData = chartDataFromGraph(graph);
         drawDegreeDistributionChart(degreeChartData);
     };
 
     document.getElementById('addVertexBtn').addEventListener('mousedown', () => {
-        addVertexRepeatedly(); // Add once immediately for responsiveness
-        addVertexInterval = setInterval(addVertexRepeatedly, 250); // Adjust interval as needed
+        const isSpecifyEdgesMode = document.getElementById('specifyEdgesMode').checked;
+        let k = null;
+        if (isSpecifyEdgesMode) {
+            k = parseInt(document.getElementById('numEdgesInput').value, 10) || 1;
+        }
+        addVertexRepeatedly(k); // Add once immediately for responsiveness
+        addVertexInterval = setInterval(addVertexRepeatedly, 250, k); // Adjust interval as needed
     });
 
     const stopAddingVertex = () => {
@@ -396,6 +486,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         graph.clear();
         resetGraph(svg.node(), g); // Pass the SVG container where your graph is drawn
     });
+
+    
     
     // Handle the simulation "tick"
     simulation.on("tick", () => {
@@ -442,6 +534,10 @@ async function resetGraph(svgContainer, g) {
         percentiles = calculateDegreePercentiles(graph);
         // Redraw the graph with the new vertex and edges
         graph.draw(g.node(), simulation, percentiles);
+        // Update statistics
+        updateGraphStatistics(graph);
+        degreeChartData = chartDataFromGraph(graph);
+        drawDegreeDistributionChart(degreeChartData);
     } catch (error) {
         console.error("Failed to reset the graph:", error);
     }
