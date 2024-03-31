@@ -158,7 +158,7 @@ async function resetGraph(svgContainer, g) {
     
         // Restart the simulation with the new data
         simulation.alpha(1).restart();
-        percentiles = calculateDegreePercentiles(graph);
+        let percentiles = calculateDegreePercentiles(graph);
         // Redraw the graph with the new vertex and edges
         graph.draw(g.node(), simulation, percentiles);
         // Update statistics
