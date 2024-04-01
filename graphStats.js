@@ -94,3 +94,20 @@ export function updateGraphStatistics(graph) {
     document.getElementById('edge-count').textContent = edgeCount;
     document.getElementById('avg-degree').textContent = avgDeg.toFixed(2);
 }
+
+export function calculateGraphDensity(graph) {
+    const order = graph.vertexSet.length;
+    const size = graph.edgeSet.length;
+    const completeGraphSize = order * (order - 1) / 2;
+    return size / completeGraphSize;
+}
+
+export function repulsionFromDensity(density) {
+    const repulsionStrength = -500 - density * 1000;
+    return repulsionStrength;
+}
+
+export function distanceFromDensity(density, order) {
+    const distance = 100 * density * order;
+    return distance;
+}

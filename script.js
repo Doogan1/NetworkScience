@@ -1,5 +1,5 @@
-import { createGraphFromJson, addKVerticesWithPreferentialAttachment, addVertexWithPreferentialAttachment} from './graphManipulation.js';
-import { calculateDegreePercentiles, chartDataFromGraph, drawDegreeDistributionChart, updateGraphStatistics } from './graphStats.js';
+import { createGraphFromJson, addKVerticesWithPreferentialAttachment, addVertexWithPreferentialAttachment, setupForceSimulation} from './graphManipulation.js';
+import { calculateDegreePercentiles, chartDataFromGraph, drawDegreeDistributionChart, updateGraphStatistics, repulsionFromDensity} from './graphStats.js';
 
 
 
@@ -49,13 +49,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     //calculate percentiles for coloring vertices
     let percentiles = calculateDegreePercentiles(graph);
     // Initialize the simulation
-    const simulation = d3.forceSimulation(graph.vertexSet.map(v => v.position))
-        .force("link", d3.forceLink(graph.edgeSet.map(e => ({
-            source: graph.vertexSet.indexOf(e.vertex1),
-            target: graph.vertexSet.indexOf(e.vertex2)
-        }))).id(d => d.index))
-        .force("charge", d3.forceManyBody().strength(-600))
-        .force("center", d3.forceCenter(width / 2, height / 2));
+    // const simulation = d3.forceSimulation(graph.vertexSet.map(v => v.position))
+    //     .force("link", d3.forceLink(graph.edgeSet.map(e => ({
+    //         source: graph.vertexSet.indexOf(e.vertex1),
+    //         target: graph.vertexSet.indexOf(e.vertex2)
+    //     }))).id(d => d.index))
+    //     .force("charge", d3.forceManyBody().strength(-600))
+    //     .force("center", d3.forceCenter(width / 2, height / 2));
+
+    const simulation = setupForceSimulation(graph);
     
     // document.getElementById('addVertexBtn').addEventListener('click', () => {
     //     addVertexWithPreferentialAttachment(graph, g, simulation);
@@ -121,7 +123,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             graph.vertexSet[i].position.x = d.x;
             graph.vertexSet[i].position.y = d.y;
         });
-
         let percentiles = calculateDegreePercentiles(graph);
         // Redraw the graph
         graph.draw(g.node(), simulation, percentiles);
@@ -138,14 +139,7 @@ async function resetGraph(svgContainer, g) {
         degreeChartData = chartDataFromGraph(graph);
         drawDegreeDistributionChart(degreeChartData);
      // Reinitialize simulation with new/old data
-        var width = 800, height = 750;
-        const simulation = d3.forceSimulation(graph.vertexSet.map(v => v.position))
-        .force("link", d3.forceLink(graph.edgeSet.map(e => ({
-            source: graph.vertexSet.indexOf(e.vertex1),
-            target: graph.vertexSet.indexOf(e.vertex2)
-        }))).id(d => d.index))
-        .force("charge", d3.forceManyBody().strength(-600))
-        .force("center", d3.forceCenter(width / 2, height / 2));
+        const simulation = setupForceSimulation(graph);
 
         simulation.nodes(graph.vertexSet.map(v => v.position));
 

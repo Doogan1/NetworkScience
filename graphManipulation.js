@@ -1,11 +1,30 @@
 import { Vertex, Edge, Graph} from './graphClasses.js';
-import { calculateDegreePercentiles } from './graphStats.js';
+import { calculateDegreePercentiles, calculateGraphDensity, repulsionFromDensity, distanceFromDensity } from './graphStats.js';
+
+var width = 800;
+var height = 750;
 
 function addEdge(graph, sourceVertex, targetVertex) {
     const newEdge = new Edge(sourceVertex, targetVertex);
 
     graph.addEdge(newEdge);
 
+}
+
+export function setupForceSimulation(graph) {
+    const density = calculateGraphDensity(graph);
+
+    // Adjust force strength and distance based on density, stronger repulsion for denser graphs, higher distance for denser graphs
+    const repulsionStrength = repulsionFromDensity(density);
+    const simulation = d3.forceSimulation(graph.vertexSet.map(v => v.position))
+        .force("link", d3.forceLink(graph.edgeSet.map(e => ({
+            source: graph.vertexSet.indexOf(e.vertex1),
+            target: graph.vertexSet.indexOf(e.vertex2)
+        }))).id(d => d.index).distance(distanceFromDensity(density, graph.vertexSet.length)))
+        .force("charge", d3.forceManyBody().strength(repulsionStrength))
+        .force("center", d3.forceCenter(width / 2, height / 2));
+
+    return simulation;
 }
 
 export function createGraphFromJson(json, svgContainer) {
@@ -91,7 +110,13 @@ export function addKVerticesWithPreferentialAttachment(graph, g, simulation, k) 
         source: graph.vertexSet.indexOf(e.vertex1),
         target: graph.vertexSet.indexOf(e.vertex2)
     }));
-    simulation.force("link").links(updatedLinks);
+    const density = calculateGraphDensity(graph);
+    // Update simulation with new links and repulsion strength
+    simulation.force("link", d3.forceLink(graph.edgeSet.map(e => ({
+        source: graph.vertexSet.indexOf(e.vertex1),
+        target: graph.vertexSet.indexOf(e.vertex2)
+    }))).id(d => d.index).distance(distanceFromDensity(density, graph.vertexSet.length)));
+    simulation.force("charge", d3.forceManyBody().strength(repulsionFromDensity(density)));
     simulation.alpha(1).restart();
     let percentiles = calculateDegreePercentiles(graph);
     graph.draw(g.node(), simulation, percentiles);
@@ -134,11 +159,13 @@ export function addVertexWithPreferentialAttachment(graph, g, simulation) {
     simulation.nodes(graph.vertexSet.map(v => v.position));
 
     // Update the simulation links with any new edges
-    const updatedLinks = graph.edgeSet.map(e => ({
+    const density = calculateGraphDensity(graph);
+    simulation.force("link", d3.forceLink(graph.edgeSet.map(e => ({
         source: graph.vertexSet.indexOf(e.vertex1),
         target: graph.vertexSet.indexOf(e.vertex2)
-    }));
-    simulation.force("link").links(updatedLinks);
+    }))).id(d => d.index).distance(distanceFromDensity(density, graph.vertexSet.length)));
+
+    simulation.force("charge", d3.forceManyBody().strength(repulsionFromDensity(density)));
 
     // Restart the simulation with the new data
     simulation.alpha(1).restart();
@@ -146,3 +173,4 @@ export function addVertexWithPreferentialAttachment(graph, g, simulation) {
     // Redraw the graph with the new vertex and edges
     graph.draw(g.node(), simulation, percentiles); 
 }
+
