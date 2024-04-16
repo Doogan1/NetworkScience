@@ -55,7 +55,7 @@
                             <h6 class="m-0 font-weight-bold text-primary">Degree Distribution</h6>
                         </div>
                         <div class="card-body">
-                            <svg id="degreeDistributionChart" width="400" height="190"></svg>
+                            <svg id="degreeDistributionChart"></svg>
                         </div>
                     </div>
                 </div>   
@@ -65,7 +65,7 @@
                 <div class="card shadow mb-4 ">
                     <div id="network-card" class="card-header py-3 ">
                         <h6 class="m-0 font-weight-bold text-primary">
-                            Network Graph - 
+                            Network - 
                             # of Vertices (order, n): <span id="vertex-count"></span>
                             |
                             # of Edges (size, m): <span id="edge-count"></span>
@@ -100,6 +100,13 @@
                                 </div>
                                 <!-- Hidden Input for specifying k -->
                                 <input type="number" id="numEdgesInput" class="form-control" placeholder="Enter number of edges (k)" style="display: none;">
+                            </div>
+                            <div class="slider-controls">
+                                <label for="vertex-size-slider">Vertex Size Scale: <span id="vertex-size-output">1.0</span></label>
+                                <input type="range" id="vertex-size-slider" min="0.1" max="2.0" step="0.1" value="0.5">
+                            
+                                <label for="repulsion-strength-slider">Repulsion Strength: <span id="repulsion-strength-output">-500</span></label>
+                                <input type="range" id="repulsion-strength-slider" min="-1000" max="-100" step="50" value="-500">
                             </div>
                         </div>
                     </div>

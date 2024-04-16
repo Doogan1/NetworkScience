@@ -23,7 +23,7 @@ export function setupForceSimulation(graph) {
         }))).id(d => d.index).distance(distanceFromDensity(density, graph.vertexSet.length)))
         .force("charge", d3.forceManyBody().strength(repulsionStrength))
         .force("center", d3.forceCenter(width / 2, height / 2));
-
+    simulation.alphaDecay(0.1);
     return simulation;
 }
 
@@ -118,8 +118,13 @@ export function addKVerticesWithPreferentialAttachment(graph, g, simulation, k) 
     }))).id(d => d.index).distance(distanceFromDensity(density, graph.vertexSet.length)));
     simulation.force("charge", d3.forceManyBody().strength(repulsionFromDensity(density)));
     simulation.alpha(1).restart();
-    let percentiles = calculateDegreePercentiles(graph);
-    graph.draw(g.node(), simulation, percentiles);
+    
+    // Update percentiles for all vertices
+    graph.vertexSet.forEach(vertex => {
+        vertex.updatePercentile(graph);
+    });
+
+    graph.draw(g.node(), simulation);
 }
 
 export function addVertexWithPreferentialAttachment(graph, g, simulation) {
@@ -132,6 +137,11 @@ export function addVertexWithPreferentialAttachment(graph, g, simulation) {
     const newVertexId = `${graph.vertexSet.length}`;
     const newVertex = new Vertex(Math.random() * 800, Math.random() * 600, newVertexId);
     graph.addVertex(newVertex);
+
+    // Update percentiles for all vertices
+    graph.vertexSet.forEach(vertex => {
+        vertex.updatePercentile(graph);
+    });
 
     // introduce flag to redraw edges if no edges are drawn
 
@@ -169,8 +179,8 @@ export function addVertexWithPreferentialAttachment(graph, g, simulation) {
 
     // Restart the simulation with the new data
     simulation.alpha(1).restart();
-    const percentiles = calculateDegreePercentiles(graph);
+    
     // Redraw the graph with the new vertex and edges
-    graph.draw(g.node(), simulation, percentiles); 
+    graph.draw(g.node(), simulation); 
 }
 

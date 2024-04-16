@@ -46,6 +46,22 @@ h1 {
     z-index: 10; /* Ensure it's above other elements */
 }
 
+#degree-distribution-card {
+    width: 100%;
+    justify-content: center;
+}
+
+.slider-controls {
+    margin-top: 20px;
+}
+
+.slider-controls label {
+    display: block;
+}
+
+input[type="range"] {
+    width: 100%;
+}
 
 @media (max-width: 991px) { /* Adjust based on Bootstrap's breakpoints if needed */
     .mb-4-custom {

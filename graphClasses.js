@@ -33,6 +33,7 @@ export class Vertex {
         this.position = { x, y };
         this.id = id;
         this.edges = [];
+        this.percentile = 1;
     }
 
     draw(g, simulation, fillColor) {
@@ -42,13 +43,18 @@ export class Vertex {
         // Bind the vertex data to a circle. If the circle doesn't exist, enter() will create it.
         let d3Circle = gSelection.selectAll(`#vertex-${this.id}`)
             .data([this.position], d => d.id);
-    
+        
+        //Get Value of the vertex scaling slider
+        const vertexSizeSlider = document.getElementById('vertex-size-slider');
+        const slider = vertexSizeSlider.value;
+        // Calculate radius based on percentile in degree distribution
+        const radius = (10 + this.percentile * 50) * slider;    //between 10 and 60.  consider adjusting this with a spline and have a "width" and min radius controlled with a slider
         // Enter selection: Create the circle if it doesn't exist
         d3Circle.enter().append('circle')
             .attr('class', 'circle')
             .attr('id', `vertex-${this.id}`)
             .attr('fill', fillColor)
-            .attr('r', 20)
+            .attr('r', radius)
             .merge(d3Circle) // Merge enter and update selections
             .attr('cx', d => d.x)
             .attr('cy', d => d.y)
@@ -74,7 +80,15 @@ export class Vertex {
         d3Circle.exit().remove();
     }
 
-    
+    updatePercentile(graph) {
+        const degrees = graph.vertexSet.map(v => v.edges.length);
+        const maxDegree = Math.max(...degrees);
+        if (maxDegree > 0) {
+            this.percentile = (this.edges.length || 0) / maxDegree;
+        } else {
+            this.percentile = 0;
+        }
+    }
     
 }
 
@@ -111,7 +125,7 @@ export class Graph {
         this.vertexSet[edge.vertex2.id].edges.push(edge);
     }
 
-    draw(g, simulation, percentiles) {
+    draw(g, simulation) {
         // Clear previous SVG elements
         g.innerHTML = '';
 
@@ -125,10 +139,8 @@ export class Graph {
         //const percentiles = calculateDegreePercentiles(this);
 
         // Draw vertices
-        this.vertexSet.forEach((vertex, i) => {
-            //console.log(`Percentiles are ${percentiles}`);
-            const fillColor = colorScale(percentiles[i]);
-            //console.log(fillColor);
+        this.vertexSet.forEach(vertex => {
+            const fillColor = colorScale(vertex.percentile);
             vertex.draw(g, simulation, fillColor);
         });
     }
