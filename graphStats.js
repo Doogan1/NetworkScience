@@ -2,10 +2,11 @@ export function calculateDegreePercentiles(graph) {
     const degrees = graph.vertexSet.map(vertex => vertex.edges.length || 0); // Assuming `edges` count as degree
     const sortedDegrees = [...degrees].sort((a, b) => a - b);
     const maxDegree = sortedDegrees[sortedDegrees.length - 1];
-
+    console.log("Degrees:", degrees, "Max Degree:", maxDegree);
+    if (maxDegree === 0) return degrees.map(() => 0);
     // Calculate percentile for each degree
     let percentiles = degrees.map(degree => degree / maxDegree);
-
+    console.log("Percentiles:", percentiles);
     return percentiles;
 }
 
@@ -40,15 +41,19 @@ export function chartDataFromGraph(graph) {
 }
 
 export function drawDegreeDistributionChart(data) {
+    // Select the SVG container first and get its width
+    const svgContainer = d3.select("#degree-distribution-card .card-body");
+    const containerWidth = svgContainer.node().getBoundingClientRect().width;
+
     const svg = d3.select("#degreeDistributionChart");
     svg.selectAll("*").remove(); // Clear the SVG for redrawing
 
-    const margin = { top: 20, right: 20, bottom: 30, left: 40 }
+    const margin = { top: 20, right: 20, bottom: 50, left: 20 }; // Increased bottom margin for rotated labels
 
-    const boundingRect = svg.node().getBoundingClientRect();
-    const width = boundingRect.width - margin.left - margin.right;
-    const height = boundingRect.height - margin.top - margin.bottom;
+    const width = containerWidth - margin.left - margin.right;
+    const height = 250 - margin.top - margin.bottom;
 
+    console.log(width)
     // Create a scale for your x axis based on degree
     const x = d3.scaleBand()
                 .range([0, width])
@@ -63,14 +68,10 @@ export function drawDegreeDistributionChart(data) {
     const g = svg.append("g")
                  .attr("transform", `translate(${margin.left},${margin.top})`);
 
-    // X Axis
-    g.append("g")
-     .attr("transform", `translate(0,${height})`)
-     .call(d3.axisBottom(x));
-
-    // Y Axis
-    g.append("g")
-     .call(d3.axisLeft(y));
+    // Calculate optimal text size and angle based on the number of degrees
+    const numDegrees = data.length;
+    const fontSize = Math.max(12, Math.min(20, 300 / numDegrees)); // Adjust the size range and divisor as needed
+    const textAngle = numDegrees > 10 ? -90 : 0; // Rotate text if too many degrees
 
     // Bars
     g.selectAll(".bar")
@@ -82,7 +83,30 @@ export function drawDegreeDistributionChart(data) {
      .attr("width", x.bandwidth())
      .attr("height", d => height - y(d.count))
      .attr("fill", "steelblue"); // Add fill to customize bar color
+
+     // X Axis
+    const xAxis = g.append("g")
+    .attr("transform", `translate(0,${height})`)
+    .call(d3.axisBottom(x));
+
+    xAxis.selectAll("text")
+    .style("text-anchor", numDegrees > 10 ? "end" : "middle")
+    .attr("dx", numDegrees > 10 ? "-.5em" : "0")
+    .attr("dy", numDegrees > 10 ? "-.35" : "1em")
+    .attr("transform", `rotate(${textAngle})`)
+    .style("font-size", `${fontSize}px`);
+
+    // Y Axis
+    g.append("g")
+    .call(d3.axisLeft(y));
+
+     // Get the bounding box of the 'g' element
+    const bbox = g.node().getBBox();
+
+    // Set the viewBox attribute dynamically based on the bounding box
+    svg.attr("viewBox", `${bbox.x + 10} ${bbox.y + 5} ${bbox.width + 25} ${bbox.height + 20}`);
 }
+
 
 export function updateGraphStatistics(graph) {
     const vertexCount = graph.vertexSet.length;

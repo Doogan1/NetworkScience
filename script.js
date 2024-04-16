@@ -114,21 +114,52 @@ document.addEventListener('DOMContentLoaded', async () => {
         resetGraph(svg.node(), g); // Pass the SVG container where your graph is drawn
     });
 
+    const vertexSizeSlider = document.getElementById('vertex-size-slider');
+    const vertexSizeOutput = document.getElementById('vertex-size-output');
+    vertexSizeSlider.addEventListener('input', function() {
+        vertexSizeOutput.textContent = this.value;
+      //  updateVertexSizes(this.value);
+        graph.draw(g.node(), simulation)
+    });
+
+    const repulsionStrengthSlider = document.getElementById('repulsion-strength-slider');
+    const repulsionStrengthOutput = document.getElementById('repulsion-strength-output');
+    repulsionStrengthSlider.addEventListener('input', function() {
+        repulsionStrengthOutput.textContent = this.value;
+        updateRepulsionStrength(this.value);
+    });
     
+    // function updateVertexSizes(scaleFactor) {
+    //     graph.vertexSet.forEach((vertex, i) => {
+    //         console.log(vertex.percentile)
+    //         const newRadius = (10 + vertex.percentile * 50) * scaleFactor; // Adjust base size and scaling factor
+    //         d3.select(`#vertex-${vertex.id}`).attr('r', newRadius);
+    //     });
+    // }
     
+    function updateRepulsionStrength(strength) {
+        simulation.force("charge", d3.forceManyBody().strength(+strength));
+        simulation.alpha(1).restart(); // Reheat and restart the simulation for changes to take effect
+    }
+    let tickCounter = 0;
     // Handle the simulation "tick"
     simulation.on("tick", () => {
-        // Update vertex positions based on simulation
-        graph.vertexSet.map(v => v.position).forEach((d, i) => {
-            graph.vertexSet[i].position.x = d.x;
-            graph.vertexSet[i].position.y = d.y;
-        });
-        let percentiles = calculateDegreePercentiles(graph);
+        tickCounter++;
+        if (tickCounter % 10 === 0) { // Update every 10 ticks
+            console.log(`Tick Counter: ${tickCounter}`);
+            updatePositions();
+        }
         // Redraw the graph
-        graph.draw(g.node(), simulation, percentiles);
+        graph.draw(g.node(), simulation);
     });
 });
 
+function updatePositions() {
+    graph.vertexSet.map(v => v.position).forEach((d, i) => {
+        graph.vertexSet[i].position.x = d.x;
+        graph.vertexSet[i].position.y = d.y;
+    });
+}
 async function resetGraph(svgContainer, g) {
     try {
         const res = await fetch('petersen_graph_data.json');
