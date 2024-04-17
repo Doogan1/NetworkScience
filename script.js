@@ -1,4 +1,4 @@
-import { createGraphFromJson, addKVerticesWithPreferentialAttachment, addVertexWithPreferentialAttachment, setupForceSimulation} from './graphManipulation.js';
+import { createGraphFromJson, addKVerticesWithPreferentialAttachment, addVertexWithPreferentialAttachment, setupForceSimulation, updateCollisionRadius} from './graphManipulation.js';
 import { calculateDegreePercentiles, chartDataFromGraph, drawDegreeDistributionChart, updateGraphStatistics, repulsionFromDensity} from './graphStats.js';
 
 
@@ -119,6 +119,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     vertexSizeSlider.addEventListener('input', function() {
         vertexSizeOutput.textContent = this.value;
       //  updateVertexSizes(this.value);
+        updateCollisionRadius(simulation, graph); // Update the collision radius in the simulation
         graph.draw(g.node(), simulation)
     });
 
@@ -128,14 +129,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         repulsionStrengthOutput.textContent = this.value;
         updateRepulsionStrength(this.value);
     });
-    
-    // function updateVertexSizes(scaleFactor) {
-    //     graph.vertexSet.forEach((vertex, i) => {
-    //         console.log(vertex.percentile)
-    //         const newRadius = (10 + vertex.percentile * 50) * scaleFactor; // Adjust base size and scaling factor
-    //         d3.select(`#vertex-${vertex.id}`).attr('r', newRadius);
-    //     });
-    // }
     
     function updateRepulsionStrength(strength) {
         simulation.force("charge", d3.forceManyBody().strength(+strength));
@@ -183,9 +176,8 @@ async function resetGraph(svgContainer, g) {
     
         // Restart the simulation with the new data
         simulation.alpha(1).restart();
-        let percentiles = calculateDegreePercentiles(graph);
         // Redraw the graph with the new vertex and edges
-        graph.draw(g.node(), simulation, percentiles);
+        graph.draw(g.node(), simulation);
         // Update statistics
         updateGraphStatistics(graph);
         degreeChartData = chartDataFromGraph(graph);

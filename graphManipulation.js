@@ -22,9 +22,20 @@ export function setupForceSimulation(graph) {
             target: graph.vertexSet.indexOf(e.vertex2)
         }))).id(d => d.index).distance(distanceFromDensity(density, graph.vertexSet.length)))
         .force("charge", d3.forceManyBody().strength(repulsionStrength))
-        .force("center", d3.forceCenter(width / 2, height / 2));
+        .force("center", d3.forceCenter(width / 2, height / 2))
+        .force("collide", d3.forceCollid().radius(d => d.radius));
+
     simulation.alphaDecay(0.1);
     return simulation;
+}
+
+// Update the collision force radius when the vertex sizes change
+export function updateCollisionRadius(simulation, graph) {
+    simulation.force("collide").radius(d => {
+        const vertex = graph.vertexSet.find(v => v.position === d);
+        return vertex ? vertex.radius : 10; // Default to 10 if not found
+    });
+    simulation.alpha(1).restart(); // Reheat and restart the simulation
 }
 
 export function createGraphFromJson(json, svgContainer) {
