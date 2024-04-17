@@ -127,9 +127,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     const repulsionStrengthOutput = document.getElementById('repulsion-strength-output');
     repulsionStrengthSlider.addEventListener('input', function() {
         repulsionStrengthOutput.textContent = this.value;
-        updateRepulsionStrength(this.value);
+        updateRepulsionStrength(-this.value);
     });
     
+    const instructionsCard = document.querySelector('#instructions-card .card-body');
+    const toggleBtn = document.getElementById('toggleInstructionsBtn');
+
+    toggleBtn.addEventListener('click', function() {
+        // Check the current visibility of the instructions card
+        if (instructionsCard.style.display === 'none') {
+            instructionsCard.style.display = ''; // Show the card body
+            toggleBtn.textContent = 'Hide'; // Update button text
+        } else {
+            instructionsCard.style.display = 'none'; // Hide the card body
+            toggleBtn.textContent = 'Show'; // Update button text
+        }
+    });
+
     function updateRepulsionStrength(strength) {
         simulation.force("charge", d3.forceManyBody().strength(+strength));
         simulation.alpha(1).restart(); // Reheat and restart the simulation for changes to take effect
@@ -139,7 +153,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     simulation.on("tick", () => {
         tickCounter++;
         if (tickCounter % 10 === 0) { // Update every 10 ticks
-            console.log(`Tick Counter: ${tickCounter}`);
             updatePositions();
         }
         // Redraw the graph

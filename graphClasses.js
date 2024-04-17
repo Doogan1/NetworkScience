@@ -34,6 +34,7 @@ export class Vertex {
         this.id = id;
         this.edges = [];
         this.percentile = 1;
+        this.radius = 10;
     }
 
     draw(g, simulation, fillColor) {
@@ -48,13 +49,13 @@ export class Vertex {
         const vertexSizeSlider = document.getElementById('vertex-size-slider');
         const slider = vertexSizeSlider.value;
         // Calculate radius based on percentile in degree distribution
-        const radius = (10 + this.percentile * 50) * slider;    //between 10 and 60.  consider adjusting this with a spline and have a "width" and min radius controlled with a slider
+        this.radius = (10 + this.percentile * 50) * slider;    //between 10 and 60.  consider adjusting this with a spline and have a "width" and min radius controlled with a slider
         // Enter selection: Create the circle if it doesn't exist
         d3Circle.enter().append('circle')
             .attr('class', 'circle')
             .attr('id', `vertex-${this.id}`)
             .attr('fill', fillColor)
-            .attr('r', radius)
+            .attr('r', this.radius)
             .merge(d3Circle) // Merge enter and update selections
             .attr('cx', d => d.x)
             .attr('cy', d => d.y)

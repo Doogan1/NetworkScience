@@ -63,6 +63,14 @@ input[type="range"] {
     width: 100%;
 }
 
+.vertical-divider {
+    width: 1px;
+    background-color: #797979;
+    color: #797979;
+    height: 100%;
+    margin: auto 0;
+}
+
 @media (max-width: 991px) { /* Adjust based on Bootstrap's breakpoints if needed */
     .mb-4-custom {
         margin-bottom: 1.5rem !important; /* Increase spacing between cards on smaller screens */
