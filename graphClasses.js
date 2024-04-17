@@ -28,6 +28,26 @@ function defineDragBehavior(simulation) {
         .on("end", dragended);
 }
 
+export function applyDrag(simulation, g) {
+    const dragHandler = d3.drag()
+        .on("start", function (event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        })
+        .on("drag", function (event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        })
+        .on("end", function (event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        });
+
+    d3.select(g).selectAll('circle').call(dragHandler);
+}
+
 export class Vertex {
     constructor(x, y, id) {
         this.position = { x, y };

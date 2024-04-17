@@ -1,5 +1,6 @@
 import { createGraphFromJson, addKVerticesWithPreferentialAttachment, addVertexWithPreferentialAttachment, setupForceSimulation, updateCollisionRadius} from './graphManipulation.js';
-import { calculateDegreePercentiles, chartDataFromGraph, drawDegreeDistributionChart, updateGraphStatistics, repulsionFromDensity} from './graphStats.js';
+import { chartDataFromGraph, drawDegreeDistributionChart, updateGraphStatistics} from './graphStats.js';
+import { Vertex, Edge, applyDrag} from './graphClasses.js';
 
 
 
@@ -24,7 +25,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     var g = svg.append("g"); // All visual elements will be added to this group
 
-    
+    populateSavedGraphsDropdown();
+
     svg.call(d3.zoom().on("zoom", function (event) {
         g.attr("transform", event.transform); // Apply the transformation to the group element
     }));
@@ -46,8 +48,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     degreeChartData = chartDataFromGraph(graph);
     drawDegreeDistributionChart(degreeChartData);
 
-    //calculate percentiles for coloring vertices
-    let percentiles = calculateDegreePercentiles(graph);
+    
+    
     // Initialize the simulation
     // const simulation = d3.forceSimulation(graph.vertexSet.map(v => v.position))
     //     .force("link", d3.forceLink(graph.edgeSet.map(e => ({
@@ -98,6 +100,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         addVertexRepeatedly(k); // Add once immediately for responsiveness
         addVertexInterval = setInterval(addVertexRepeatedly, 250, k); // Adjust interval as needed
     });
+
+    let selectedGraphName = "";
+
+    function loadSelectedGraph() {
+        loadGraphFromLocal(selectedGraphName);
+    };
+
+    document.getElementById('savedGraphsDropdown').addEventListener('change', function() {
+        selectedGraphName = this.value;
+    });
+
+    document.getElementById('loadGraph').addEventListener('click', loadSelectedGraph);
 
     const stopAddingVertex = () => {
         if (addVertexInterval) {
@@ -158,6 +172,126 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Redraw the graph
         graph.draw(g.node(), simulation);
     });
+
+    document.getElementById('saveBtn').addEventListener('click', function() {
+        // Calculate and display graph data
+        const numVertices = graph.vertexSet.length;
+        const numEdges = graph.edgeSet.length;
+        const avgDeg = 2 * numEdges / numVertices;
+    
+        document.getElementById('numVertices').textContent = `Number of vertices: ${numVertices}`;
+        document.getElementById('numEdges').textContent = `Number of edges: ${numEdges}`;
+        document.getElementById('avgDeg').textContent = `Average degree: ${avgDeg}`;
+    
+        // Show the modal
+        $('#saveGraphModal').modal('show');
+    });
+    
+    document.getElementById('saveGraph').addEventListener('click', function() {
+        const graphName = document.getElementById('graphName').value.trim();
+        if (graphName) {
+            saveGraphToLocal(graph, graphName);
+            $('#saveGraphModal').modal('hide');
+        } else {
+            alert('Please enter a name for the graph.');
+        }
+        populateSavedGraphsDropdown();
+    });
+    
+    function saveGraphToLocal(graph, graphName) {
+        const prefixedName = 'graph_' + graphName; //Add prefix to graph name
+        const graphData = {
+            vertices: graph.vertexSet.map(vertex => ({ id: vertex.id, x: vertex.position.x, y: vertex.position.y })),
+            edges: graph.edgeSet.map(edge => ({ source: edge.vertex1.id, target: edge.vertex2.id }))
+        };
+    
+        localStorage.setItem(prefixedName, JSON.stringify(graphData));
+    }
+
+    function loadGraphFromLocal(graphName) {
+        const graphDataString = localStorage.getItem(graphName);
+        if (graphDataString) {
+            const graphData = JSON.parse(graphDataString);
+            
+            // Clear current graph
+            graph.clear();
+    
+            // Reconstruct vertices
+            graphData.vertices.forEach(vData => {
+                const newVertex = new Vertex(vData.x, vData.y, vData.id);
+                graph.addVertex(newVertex);
+            });
+    
+            // Reconstruct edges
+            graphData.edges.forEach(eData => {
+                const sourceVertex = graph.vertexSet.find(v => v.id === eData.source);
+                const targetVertex = graph.vertexSet.find(v => v.id === eData.target);
+                if (sourceVertex && targetVertex) {
+                    const newEdge = new Edge(sourceVertex, targetVertex);
+                    graph.addEdge(newEdge);
+                }
+            });
+    
+            // Update the visualization
+            updateGraphVisualization(simulation);  
+        } else {
+            alert("No graph data found for the specified name.");
+        }
+    }
+    
+    function populateSavedGraphsDropdown() {
+        const dropdown = document.getElementById('savedGraphsDropdown');
+
+        // Clear existing options
+        while (dropdown.options.length > 1) {  // assuming the first option is "Select a graph to load" and should not be removed
+            dropdown.remove(1);
+        }
+        // Populate with graphs from local storage
+        Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('graph_')) { // Only add stored graphs
+                let option = new Option(key.substring(6), key); // Remove prefix
+                dropdown.add(option);
+            }
+        });
+    }
+
+    function updateGraphVisualization() {
+        // Redraw the graph based on the vertexSet and edgeSet of the current graph object
+
+        // Update percentiles for all vertices
+        graph.vertexSet.forEach(vertex => {
+            vertex.updatePercentile(graph);
+        });
+
+        // Reinitialize simulation with new/old data
+        const simulation = setupForceSimulation(graph);
+        const repulsionStrengthSlider = document.getElementById('repulsion-strength-slider');
+        const repulsionStrength = -parseInt(repulsionStrengthSlider.value,10);
+        simulation.nodes(graph.vertexSet.map(v => v.position));
+
+        // Update the simulation links with any new edges
+        const updatedLinks = graph.edgeSet.map(e => ({
+            source: graph.vertexSet.indexOf(e.vertex1),
+            target: graph.vertexSet.indexOf(e.vertex2)
+        }));
+        simulation.force("link").links(updatedLinks);
+        
+        simulation.force("charge", d3.forceManyBody().strength(repulsionStrength));
+
+        // Reapply drag behavior
+        applyDrag(simulation, g.node());
+
+        // Restart the simulation with the new data
+        simulation.alpha(1).restart();
+        // Redraw the graph with the new vertex and edges
+        graph.draw(g.node(), simulation);
+        // Update statistics
+        updateGraphStatistics(graph);
+        degreeChartData = chartDataFromGraph(graph);
+        drawDegreeDistributionChart(degreeChartData);
+
+    }
+    
 });
 
 function updatePositions() {
