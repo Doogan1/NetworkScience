@@ -22,9 +22,20 @@ export function setupForceSimulation(graph) {
             target: graph.vertexSet.indexOf(e.vertex2)
         }))).id(d => d.index).distance(distanceFromDensity(density, graph.vertexSet.length)))
         .force("charge", d3.forceManyBody().strength(repulsionStrength))
-        .force("center", d3.forceCenter(width / 2, height / 2));
+        .force("center", d3.forceCenter(width / 2, height / 2))
+        .force("collide", d3.forceCollide().radius(d => d.radius));
+
     simulation.alphaDecay(0.1);
     return simulation;
+}
+
+// Update the collision force radius when the vertex sizes change
+export function updateCollisionRadius(simulation, graph) {
+    simulation.force("collide").radius(d => {
+        const vertex = graph.vertexSet.find(v => v.position === d);
+        return vertex ? vertex.radius : 10; // Default to 10 if not found
+    });
+    simulation.alpha(1).restart(); // Reheat and restart the simulation
 }
 
 export function createGraphFromJson(json, svgContainer) {
@@ -112,11 +123,15 @@ export function addKVerticesWithPreferentialAttachment(graph, g, simulation, k) 
     }));
     const density = calculateGraphDensity(graph);
     // Update simulation with new links and repulsion strength
+    const repulsionStrengthSlider = document.getElementById('repulsion-strength-slider');
+    const repulsionStrength = -parseInt(repulsionStrengthSlider.value,10);
+    console.log(repulsionStrength);
     simulation.force("link", d3.forceLink(graph.edgeSet.map(e => ({
         source: graph.vertexSet.indexOf(e.vertex1),
         target: graph.vertexSet.indexOf(e.vertex2)
     }))).id(d => d.index).distance(distanceFromDensity(density, graph.vertexSet.length)));
-    simulation.force("charge", d3.forceManyBody().strength(repulsionFromDensity(density)));
+    console.log(distanceFromDensity(density, graph.vertexSet.length))
+    simulation.force("charge", d3.forceManyBody().strength(repulsionStrength));
     simulation.alpha(1).restart();
     
     // Update percentiles for all vertices
@@ -167,7 +182,8 @@ export function addVertexWithPreferentialAttachment(graph, g, simulation) {
     }
 
     simulation.nodes(graph.vertexSet.map(v => v.position));
-
+    const repulsionStrengthSlider = document.getElementById('repulsion-strength-slider');
+    const repulsionStrength = -parseInt(repulsionStrengthSlider.value,10);
     // Update the simulation links with any new edges
     const density = calculateGraphDensity(graph);
     simulation.force("link", d3.forceLink(graph.edgeSet.map(e => ({
@@ -175,7 +191,7 @@ export function addVertexWithPreferentialAttachment(graph, g, simulation) {
         target: graph.vertexSet.indexOf(e.vertex2)
     }))).id(d => d.index).distance(distanceFromDensity(density, graph.vertexSet.length)));
 
-    simulation.force("charge", d3.forceManyBody().strength(repulsionFromDensity(density)));
+    simulation.force("charge", d3.forceManyBody().strength(repulsionStrength));
 
     // Restart the simulation with the new data
     simulation.alpha(1).restart();

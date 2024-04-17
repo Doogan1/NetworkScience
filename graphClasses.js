@@ -28,12 +28,33 @@ function defineDragBehavior(simulation) {
         .on("end", dragended);
 }
 
+export function applyDrag(simulation, g) {
+    const dragHandler = d3.drag()
+        .on("start", function (event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        })
+        .on("drag", function (event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        })
+        .on("end", function (event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        });
+
+    d3.select(g).selectAll('circle').call(dragHandler);
+}
+
 export class Vertex {
     constructor(x, y, id) {
         this.position = { x, y };
         this.id = id;
         this.edges = [];
         this.percentile = 1;
+        this.radius = 10;
     }
 
     draw(g, simulation, fillColor) {
@@ -48,13 +69,13 @@ export class Vertex {
         const vertexSizeSlider = document.getElementById('vertex-size-slider');
         const slider = vertexSizeSlider.value;
         // Calculate radius based on percentile in degree distribution
-        const radius = (10 + this.percentile * 50) * slider;    //between 10 and 60.  consider adjusting this with a spline and have a "width" and min radius controlled with a slider
+        this.radius = (10 + this.percentile * 50) * slider;    //between 10 and 60.  consider adjusting this with a spline and have a "width" and min radius controlled with a slider
         // Enter selection: Create the circle if it doesn't exist
         d3Circle.enter().append('circle')
             .attr('class', 'circle')
             .attr('id', `vertex-${this.id}`)
             .attr('fill', fillColor)
-            .attr('r', radius)
+            .attr('r', this.radius)
             .merge(d3Circle) // Merge enter and update selections
             .attr('cx', d => d.x)
             .attr('cy', d => d.y)

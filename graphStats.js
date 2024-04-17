@@ -2,11 +2,9 @@ export function calculateDegreePercentiles(graph) {
     const degrees = graph.vertexSet.map(vertex => vertex.edges.length || 0); // Assuming `edges` count as degree
     const sortedDegrees = [...degrees].sort((a, b) => a - b);
     const maxDegree = sortedDegrees[sortedDegrees.length - 1];
-    console.log("Degrees:", degrees, "Max Degree:", maxDegree);
     if (maxDegree === 0) return degrees.map(() => 0);
     // Calculate percentile for each degree
     let percentiles = degrees.map(degree => degree / maxDegree);
-    console.log("Percentiles:", percentiles);
     return percentiles;
 }
 
@@ -53,7 +51,6 @@ export function drawDegreeDistributionChart(data) {
     const width = containerWidth - margin.left - margin.right;
     const height = 250 - margin.top - margin.bottom;
 
-    console.log(width)
     // Create a scale for your x axis based on degree
     const x = d3.scaleBand()
                 .range([0, width])

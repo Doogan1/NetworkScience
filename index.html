@@ -5,7 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Preferential Attachment Visualization</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -31,7 +35,10 @@
                 <div class="row">
                     <div id="instructions-card" class="card shadow mb-4">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">Instructions and Information</h6>
+                            <div class="row">
+                                <h6 class="m-0 font-weight-bold text-primary">Instructions and Information</h6>
+                                <button id="toggleInstructionsBtn" class="btn btn-sm btn-secondary ml-3">Hide</button>
+                            </div>
                         </div>
                         <div class="card-body">
                             <ul>
@@ -75,38 +82,89 @@
                     </div>
                     <div class="card-body">
                         <div id="network" style="height: 750px;"></div> <!-- Adjust height as needed -->
-                        <div class="btn-group mt-3" role="group" aria-label="Graph Controls">
-                            <button type="button" id="addVertexBtn" class="btn btn-primary" data-toggle="tooltip" title="Hold down to add vertices continuously">Add Vertex</button>
-                            <button type="button" id="resetGraphBtn" class="btn btn-danger">Reset Graph</button>
-
-                            <div class="vertex-mode-selection ml-3">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="vertexAddMode" id="defaultMode" value="default" checked>
-                                    <label class="form-check-label" for="defaultMode">
-                                        Default Mode
-                                    </label>
+                        <div class="container mt-3">
+                            <div class="row align-items-center">
+                                <!-- Button Column -->
+                                <div class="col-md-4 d-flex flex-column align-items-center btn-holder">
+                                    <button type="button" id="addVertexBtn" class="btn btn-primary mb-1" data-toggle="tooltip" title="Hold down to add vertices continuously">Add Vertex</button>
+                                    <button type="button" id="resetGraphBtn" class="btn btn-danger mb-1">Reset Graph</button>
+                                    <button type="button" id="saveBtn" class="btn btn-success mb-1">Save Graph</button>
+                                    <select id="savedGraphsDropdown" class="mb-1">
+                                        <option value="">Select a graph to load</option>
+                                    </select>
+                                    <button type="button" id="loadGraph" class="btn btn-info mb-1">Load Graph</button>
+                                    <button type="button" id="downloadSelectedGraph">Download Edge List CSV</button>
                                 </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="vertexAddMode" id="specifyEdgesMode" value="specifyEdges">
-                                    <label class="form-check-label" for="specifyEdgesMode">
-                                        Specify Number of Edges
-                                    </label>
+                                
+                                <!-- Modal -->
+                                <div class="modal fade" id="saveGraphModal" tabindex="-1" role="dialog" aria-labelledby="saveGraphModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                        <h5 class="modal-title" id="saveGraphModalLabel">Save Graph</h5>
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                        </div>
+                                        <div class="modal-body">
+                                        <form>
+                                            <div class="form-group">
+                                            <label for="graphName">Graph Name:</label>
+                                            <input type="text" class="form-control" id="graphName" required>
+                                            </div>
+                                            <div class="mb-2">
+                                            <label>Graph Information:</label>
+                                            <p id="numVertices">Number of vertices: </p>
+                                            <p id="numEdges">Number of edges: </p>
+                                            <p id="avgDeg">Average degree: </p>
+                                            </div>
+                                        </form>
+                                        </div>
+                                        <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                                        <button type="button" class="btn btn-primary" id="saveGraph">Save Graph</button>
+                                        </div>
+                                    </div>
+                                    </div>
                                 </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="vertexAddModeModifier" id="noPrefAttachMode" value="noPrefAttach">
-                                    <label class="form-check-label" for="noPrefAttachMode">
-                                        No Preferential Attachment
-                                    </label>
+                                <!-- Vertical Divider
+                                <div class="col-md-1">
+                                    <div class="vertical-divider"></div>
+                                </div> -->
+                        
+                                <!-- Vertex Mode Selection Column -->
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="vertexAddMode" id="defaultMode" value="default" checked>
+                                        <label class="form-check-label" for="defaultMode">Default Mode</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="vertexAddMode" id="specifyEdgesMode" value="specifyEdges">
+                                        <label class="form-check-label" for="specifyEdgesMode">Specify Number of Edges</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="vertexAddModeModifier" id="noPrefAttachMode" value="noPrefAttach">
+                                        <label class="form-check-label" for="noPrefAttachMode">No Preferential Attachment</label>
+                                    </div>
+                                    <input type="number" id="numEdgesInput" class="form-control" placeholder="Enter number of edges (k)" style="display: none;">
                                 </div>
-                                <!-- Hidden Input for specifying k -->
-                                <input type="number" id="numEdgesInput" class="form-control" placeholder="Enter number of edges (k)" style="display: none;">
-                            </div>
-                            <div class="slider-controls">
-                                <label for="vertex-size-slider">Vertex Size Scale: <span id="vertex-size-output">1.0</span></label>
-                                <input type="range" id="vertex-size-slider" min="0.1" max="2.0" step="0.1" value="0.5">
-                            
-                                <label for="repulsion-strength-slider">Repulsion Strength: <span id="repulsion-strength-output">-500</span></label>
-                                <input type="range" id="repulsion-strength-slider" min="-1000" max="-100" step="50" value="-500">
+                        
+                                <!-- Vertical Divider
+                                <div class="col-md-1">
+                                    <div class="vertical-divider"></div>
+                                </div> -->
+                        
+                                <!-- Slider Controls Column -->
+                                <div class="col-md-4 slider-controls d-flex flex-column">
+                                    <div>
+                                        <label for="vertex-size-slider">Vertex Size Scale: <span id="vertex-size-output">1.0</span></label>
+                                        <input type="range" id="vertex-size-slider" min="0.1" max="2.0" step="0.1" value="0.5">
+                                    </div>
+                                    <div>
+                                        <label for="repulsion-strength-slider">Repulsion Strength: <span id="repulsion-strength-output">500</span></label>
+                                        <input type="range" id="repulsion-strength-slider" min="100" max="5000" step="50" value="500">
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
