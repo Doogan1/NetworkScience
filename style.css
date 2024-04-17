@@ -71,6 +71,13 @@ input[type="range"] {
     margin: auto 0;
 }
 
+#savedGraphsDropdown {
+    max-width: 100%;  /* Ensure dropdown does not exceed its container's width */
+    overflow: hidden; /* Hide text that overflows */
+    text-overflow: ellipsis; /* Show ellipsis (...) when text overflows */
+    white-space: nowrap; /* Prevent text from wrapping to the next line */
+}
+
 @media (max-width: 991px) { /* Adjust based on Bootstrap's breakpoints if needed */
     .mb-4-custom {
         margin-bottom: 1.5rem !important; /* Increase spacing between cards on smaller screens */

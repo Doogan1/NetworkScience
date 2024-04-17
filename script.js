@@ -104,6 +104,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     let selectedGraphName = "";
 
     function loadSelectedGraph() {
+        // Check if the default option or no option is selected
+        if (!selectedGraphName || selectedGraphName === "") {
+            alert('Please select a graph to load.');
+            return; // Exit the function to prevent further execution
+        }
         loadGraphFromLocal(selectedGraphName);
     };
 
@@ -254,6 +259,50 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
     }
+
+    function downloadEdgeListCSV(graphName) {
+        const graphDataString = localStorage.getItem(graphName);
+        if (!graphDataString) {
+            alert('Graph data not found in local storage.');
+            return;
+        }
+    
+        const graphData = JSON.parse(graphDataString);
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "Source,Target\n"; // Header
+    
+        graphData.edges.forEach(edge => {
+            csvContent += `${edge.source},${edge.target}\n`; // Each edge
+        });
+    
+        const encodedUri = encodeURI(csvContent);
+        triggerDownload(encodedUri, `${graphName}-edge-list.csv`);
+    }
+
+    function triggerDownload(encodedUri, fileName) {
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", fileName);
+        document.body.appendChild(link); // Required for FF
+    
+        link.click(); // Trigger download
+    
+        document.body.removeChild(link); // Clean up
+    }
+
+    function downloadSelectedGraph() {
+        const graphName = document.getElementById('savedGraphsDropdown').value;
+
+        // Check if the default option or no option is selected
+        if (!graphName || graphName === "") {
+            alert('Please select a graph to download.');
+            return; // Exit the function to prevent further execution
+        }
+
+        downloadEdgeListCSV(graphName);
+    }
+
+    document.getElementById('downloadSelectedGraph').addEventListener('click', downloadSelectedGraph);
 
     function updateGraphVisualization() {
         // Redraw the graph based on the vertexSet and edgeSet of the current graph object
