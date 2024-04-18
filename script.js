@@ -1,5 +1,5 @@
 import { createGraphFromJson, addKVerticesWithPreferentialAttachment, addVertexWithPreferentialAttachment, setupForceSimulation, updateCollisionRadius} from './graphManipulation.js';
-import { chartDataFromGraph, drawDegreeDistributionChart, updateGraphStatistics} from './graphStats.js';
+import { chartDataFromGraph, drawDegreeDistributionChart, updateGraphStatistics, calculateGraphDensity, distanceFromDensity} from './graphStats.js';
 import { Vertex, Edge, applyDrag} from './graphClasses.js';
 
 
@@ -7,6 +7,32 @@ import { Vertex, Edge, applyDrag} from './graphClasses.js';
 
 let graph;
 let degreeChartData;
+let simulation;
+
+function initializeSimulation(nodes, edges) {
+    if (simulation) {
+        simulation.stop(); // Stop the current simulation
+    }
+
+    // Setup the simulation with updated nodes and edges
+    simulation = d3.forceSimulation(nodes)
+        .force("link", d3.forceLink(edges).id(d => d.id))
+        .force("charge", d3.forceManyBody())
+        .force("center", d3.forceCenter(width / 2, height / 2));
+
+}
+
+function updateSimulationParameters(newStrength) {
+    if (simulation) {
+        simulation.force("charge", d3.forceManyBody().strength(newStrength));
+        simulation.alpha(0.5).restart(); // Reheat the simulation to ensure it keeps running
+    }
+}
+
+function resetSimulation() {
+    // Assume graphData provides new nodes and edges
+    initializeSimulation(graphData.nodes, graphData.edges);
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Width and height
@@ -25,47 +51,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     var g = svg.append("g"); // All visual elements will be added to this group
 
+    // Retrieve any saved graphs from local memory if there are any
     populateSavedGraphsDropdown();
 
-    svg.call(d3.zoom().on("zoom", function (event) {
-        g.attr("transform", event.transform); // Apply the transformation to the group element
-    }));
 
     const res = await fetch('petersen_graph_data.json');
     const graphData = await res.json();
 
     graph = createGraphFromJson(graphData, svg.node());
 
-        // Setup the force layout
-    //const nodes = graph.vertexSet.map(v => v.position);
-    //const links = graph.edgeSet.map(e => ({
-        //source: graph.vertexSet.indexOf(e.vertex1),
-        //target: graph.vertexSet.indexOf(e.vertex2)
-    //}));
     //calculate order and size and display this to the user
     updateGraphStatistics(graph);
+
     //calculate degree distribution and then draw the chart
     degreeChartData = chartDataFromGraph(graph);
     drawDegreeDistributionChart(degreeChartData);
 
+    // Initializie the simulation
+    simulation = setupForceSimulation(graph, simulation, g);
     
     
-    // Initialize the simulation
-    // const simulation = d3.forceSimulation(graph.vertexSet.map(v => v.position))
-    //     .force("link", d3.forceLink(graph.edgeSet.map(e => ({
-    //         source: graph.vertexSet.indexOf(e.vertex1),
-    //         target: graph.vertexSet.indexOf(e.vertex2)
-    //     }))).id(d => d.index))
-    //     .force("charge", d3.forceManyBody().strength(-600))
-    //     .force("center", d3.forceCenter(width / 2, height / 2));
-
-    const simulation = setupForceSimulation(graph);
-    
-    // document.getElementById('addVertexBtn').addEventListener('click', () => {
-    //     addVertexWithPreferentialAttachment(graph, g, simulation);
-    //     degreeChartData = chartDataFromGraph(graph);
-    //     drawDegreeDistributionChart(degreeChartData);
-    // });
     // listen for changes in the vertex add mode selection and have the numEdgesInput display if that mode is selected
     document.querySelectorAll('input[name="vertexAddMode"]').forEach(radio => {
         radio.addEventListener('change', function() {
@@ -103,20 +108,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let selectedGraphName = "";
 
-    function loadSelectedGraph() {
+    function loadSelectedGraph(g) {
         // Check if the default option or no option is selected
         if (!selectedGraphName || selectedGraphName === "") {
             alert('Please select a graph to load.');
             return; // Exit the function to prevent further execution
         }
-        loadGraphFromLocal(selectedGraphName);
+        loadGraphFromLocal(selectedGraphName, g);
     };
 
     document.getElementById('savedGraphsDropdown').addEventListener('change', function() {
         selectedGraphName = this.value;
     });
 
-    document.getElementById('loadGraph').addEventListener('click', loadSelectedGraph);
+    document.getElementById('loadGraph').addEventListener('click', () => loadSelectedGraph(g));
 
     const stopAddingVertex = () => {
         if (addVertexInterval) {
@@ -167,16 +172,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         simulation.force("charge", d3.forceManyBody().strength(+strength));
         simulation.alpha(1).restart(); // Reheat and restart the simulation for changes to take effect
     }
-    let tickCounter = 0;
-    // Handle the simulation "tick"
-    simulation.on("tick", () => {
-        tickCounter++;
-        if (tickCounter % 10 === 0) { // Update every 10 ticks
-            updatePositions();
-        }
-        // Redraw the graph
-        graph.draw(g.node(), simulation);
-    });
 
     document.getElementById('saveBtn').addEventListener('click', function() {
         // Calculate and display graph data
@@ -213,7 +208,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         localStorage.setItem(prefixedName, JSON.stringify(graphData));
     }
 
-    function loadGraphFromLocal(graphName) {
+    function loadGraphFromLocal(graphName, g) {
         const graphDataString = localStorage.getItem(graphName);
         if (graphDataString) {
             const graphData = JSON.parse(graphDataString);
@@ -238,7 +233,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
     
             // Update the visualization
-            updateGraphVisualization(simulation);  
+            updateGraphVisualization(g);  
         } else {
             alert("No graph data found for the specified name.");
         }
@@ -304,7 +299,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('downloadSelectedGraph').addEventListener('click', downloadSelectedGraph);
 
-    function updateGraphVisualization() {
+    function updateGraphVisualization(g) {
         // Redraw the graph based on the vertexSet and edgeSet of the current graph object
 
         // Update percentiles for all vertices
@@ -313,8 +308,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
         // Reinitialize simulation with new/old data
-        const simulation = setupForceSimulation(graph);
+        simulation = setupForceSimulation(graph, simulation, g);
         const repulsionStrengthSlider = document.getElementById('repulsion-strength-slider');
+        
         const repulsionStrength = -parseInt(repulsionStrengthSlider.value,10);
         simulation.nodes(graph.vertexSet.map(v => v.position));
 
@@ -326,14 +322,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         simulation.force("link").links(updatedLinks);
         
         simulation.force("charge", d3.forceManyBody().strength(repulsionStrength));
+        
+        simulation.force("collide", d3.forceCollide().radius(d => d.radius));
 
-        // Reapply drag behavior
-        applyDrag(simulation, g.node());
+        
 
         // Restart the simulation with the new data
         simulation.alpha(1).restart();
-        // Redraw the graph with the new vertex and edges
-        graph.draw(g.node(), simulation);
+        
         // Update statistics
         updateGraphStatistics(graph);
         degreeChartData = chartDataFromGraph(graph);
@@ -341,44 +337,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     }
     
+    async function resetGraph(svgContainer, g) {
+        try {
+            const res = await fetch('petersen_graph_data.json');
+            const graphData = await res.json();
+            
+            Object.assign(graph, createGraphFromJson(graphData, svgContainer));
+            
+            updateGraphVisualization(g);
+
+            simulation.force("collide", d3.forceCollide().radius(d => d.radius));
+        } catch (error) {
+            console.error("Failed to reset the graph:", error);
+        }
+    }
 });
-
-function updatePositions() {
-    graph.vertexSet.map(v => v.position).forEach((d, i) => {
-        graph.vertexSet[i].position.x = d.x;
-        graph.vertexSet[i].position.y = d.y;
-    });
-}
-async function resetGraph(svgContainer, g) {
-    try {
-        const res = await fetch('petersen_graph_data.json');
-        const graphData = await res.json();
-        // Assuming `graph` is accessible and has a method to clear its current state
-        Object.assign(graph, createGraphFromJson(graphData, svgContainer));
-        // You might need to reapply the force simulation setup here as well
-        degreeChartData = chartDataFromGraph(graph);
-        drawDegreeDistributionChart(degreeChartData);
-     // Reinitialize simulation with new/old data
-        const simulation = setupForceSimulation(graph);
-
-        simulation.nodes(graph.vertexSet.map(v => v.position));
-
-        // Update the simulation links with any new edges
-        const updatedLinks = graph.edgeSet.map(e => ({
-            source: graph.vertexSet.indexOf(e.vertex1),
-            target: graph.vertexSet.indexOf(e.vertex2)
-        }));
-        simulation.force("link").links(updatedLinks);
-    
-        // Restart the simulation with the new data
-        simulation.alpha(1).restart();
-        // Redraw the graph with the new vertex and edges
-        graph.draw(g.node(), simulation);
-        // Update statistics
-        updateGraphStatistics(graph);
-        degreeChartData = chartDataFromGraph(graph);
-        drawDegreeDistributionChart(degreeChartData);
-    } catch (error) {
-        console.error("Failed to reset the graph:", error);
-    }
-}
