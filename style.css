@@ -21,8 +21,8 @@ svg {
     border: 3px solid silver;
 }
 
-#addVertexBtn {
-    margin-right: 10px;
+#addVertexBtn , #resetGraphBtn {
+    width: 100%;
 }
 
 .card-min-width-800 {
@@ -52,7 +52,7 @@ h1 {
 }
 
 .slider-controls {
-    margin-top: 20px;
+    margin-top: 5px;
 }
 
 .slider-controls label {
@@ -60,7 +60,7 @@ h1 {
 }
 
 input[type="range"] {
-    width: 100%;
+    width: 85%;
 }
 
 .vertical-divider {
