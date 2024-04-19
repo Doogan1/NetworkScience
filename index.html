@@ -81,19 +81,22 @@
                         </h6>
                     </div>
                     <div class="card-body">
+                        <div class="row align-items-center d-flex">
+                            <button type="button" id="saveBtn" class="btn btn-success m-1 ml-3">Save Graph</button>
+                            <button type="button" id="loadGraph" class="btn btn-info m-1">Load Graph</button>
+                            <select id="savedGraphsDropdown" class="m-1">
+                                <option value="">Select a graph to load</option>
+                            </select>
+                            <button type="button" id="downloadSelectedGraph" class="mr-1">Download Edge List CSV</button>
+                        </div>
                         <div id="network" style="height: 750px;"></div> <!-- Adjust height as needed -->
                         <div class="container mt-3">
                             <div class="row align-items-center">
                                 <!-- Button Column -->
-                                <div class="col-md-4 d-flex flex-column align-items-center btn-holder">
+                                <div class="col-md-4 d-flex align-items-center btn-holder">
                                     <button type="button" id="addVertexBtn" class="btn btn-primary mb-1" data-toggle="tooltip" title="Hold down to add vertices continuously">Add Vertex</button>
                                     <button type="button" id="resetGraphBtn" class="btn btn-danger mb-1">Reset Graph</button>
-                                    <button type="button" id="saveBtn" class="btn btn-success mb-1">Save Graph</button>
-                                    <select id="savedGraphsDropdown" class="mb-1">
-                                        <option value="">Select a graph to load</option>
-                                    </select>
-                                    <button type="button" id="loadGraph" class="btn btn-info mb-1">Load Graph</button>
-                                    <button type="button" id="downloadSelectedGraph">Download Edge List CSV</button>
+                                    
                                 </div>
                                 
                                 <!-- Modal -->

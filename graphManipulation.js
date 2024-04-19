@@ -11,12 +11,19 @@ function addEdge(graph, sourceVertex, targetVertex) {
 
 }
 
-export function setupForceSimulation(graph) {
+function updatePositions(graph) {
+    graph.vertexSet.map(v => v.position).forEach((d, i) => {
+        graph.vertexSet[i].position.x = d.x;
+        graph.vertexSet[i].position.y = d.y;
+    });
+}
+
+export function setupForceSimulation(graph, simulation, g) {
     const density = calculateGraphDensity(graph);
 
     // Adjust force strength and distance based on density, stronger repulsion for denser graphs, higher distance for denser graphs
     const repulsionStrength = repulsionFromDensity(density);
-    const simulation = d3.forceSimulation(graph.vertexSet.map(v => v.position))
+    simulation = d3.forceSimulation(graph.vertexSet.map(v => v.position))
         .force("link", d3.forceLink(graph.edgeSet.map(e => ({
             source: graph.vertexSet.indexOf(e.vertex1),
             target: graph.vertexSet.indexOf(e.vertex2)
@@ -26,6 +33,18 @@ export function setupForceSimulation(graph) {
         .force("collide", d3.forceCollide().radius(d => d.radius));
 
     simulation.alphaDecay(0.1);
+
+    let tickCounter = 0;
+    // Handle the simulation "tick"
+    simulation.on("tick", () => {
+        tickCounter++;
+        if (tickCounter % 10 === 0) { // Update every 10 ticks
+            updatePositions(graph);
+        }
+        // Redraw the graph
+        graph.draw(g.node(), simulation);
+    });
+
     return simulation;
 }
 
@@ -125,12 +144,10 @@ export function addKVerticesWithPreferentialAttachment(graph, g, simulation, k) 
     // Update simulation with new links and repulsion strength
     const repulsionStrengthSlider = document.getElementById('repulsion-strength-slider');
     const repulsionStrength = -parseInt(repulsionStrengthSlider.value,10);
-    console.log(repulsionStrength);
     simulation.force("link", d3.forceLink(graph.edgeSet.map(e => ({
         source: graph.vertexSet.indexOf(e.vertex1),
         target: graph.vertexSet.indexOf(e.vertex2)
     }))).id(d => d.index).distance(distanceFromDensity(density, graph.vertexSet.length)));
-    console.log(distanceFromDensity(density, graph.vertexSet.length))
     simulation.force("charge", d3.forceManyBody().strength(repulsionStrength));
     simulation.alpha(1).restart();
     
