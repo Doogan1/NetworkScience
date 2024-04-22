@@ -19,10 +19,11 @@
 svg {
     background-color: gainsboro;
     border: 3px solid silver;
+    border-radius: 5px;
 }
 
 #addVertexBtn , #resetGraphBtn {
-    width: 100%;
+    width: 75%;
 }
 
 .card-min-width-800 {
