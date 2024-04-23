@@ -58,12 +58,22 @@ export function drawDegreeDistributionChart(data) {
                 .domain(data.map(d => d.degree));
 
     // Create a scale for your y axis based on count
+    const maxY = d3.max(data, d => d.count);
     const y = d3.scaleLinear()
-                .range([height, 0])
-                .domain([0, d3.max(data, d => d.count)]);
+        .range([height, 0])
+        .domain([0, maxY]).nice();
 
     const g = svg.append("g")
                  .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    // Determine the maximum allowable width for a bar
+    const maxBarWidth = 50;  // Set max width of each bar
+
+    // Calculate bandwidth
+    let bandwidth = x.bandwidth();
+    if (bandwidth > maxBarWidth) {
+        bandwidth = maxBarWidth;
+    }
 
     // Calculate optimal text size and angle based on the number of degrees
     const numDegrees = data.length;
@@ -75,9 +85,9 @@ export function drawDegreeDistributionChart(data) {
      .data(data)
      .enter().append("rect")
      .attr("class", "bar")
-     .attr("x", d => x(d.degree))
+     .attr("x", d => x(d.degree) + (x.bandwidth() - bandwidth) / 2)  // Centering the bar if it's narrower than band
      .attr("y", d => y(d.count))
-     .attr("width", x.bandwidth())
+     .attr("width", bandwidth)
      .attr("height", d => height - y(d.count))
      .attr("fill", "steelblue"); // Add fill to customize bar color
 
@@ -95,7 +105,22 @@ export function drawDegreeDistributionChart(data) {
 
     // Y Axis
     g.append("g")
-    .call(d3.axisLeft(y));
+        .call(d3.axisLeft(y).ticks(5).tickFormat(d3.format("d")));
+
+    // X-axis Label
+    g.append("text")
+    .attr("text-anchor", "end")
+    .attr("x", width / 2 + margin.left)
+    .attr("y", height + margin.top + 30)
+    .text("Degree");
+
+    // Y-axis Label
+    g.append("text")
+    .attr("text-anchor", "end")
+    .attr("transform", "rotate(-90)")
+    .attr("y", -margin.left - 10)
+    .attr("x", -height / 2)
+    .text("Count");
 
      // Get the bounding box of the 'g' element
     const bbox = g.node().getBBox();
