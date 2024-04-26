@@ -41,17 +41,28 @@
                             </div>
                         </div>
                         <div class="card-body">
+                            <h3>Background</h3>
+                            <p>In the empirical study of networks, one can observe that many real-world networks have a degree distribution with an exceptionally long tail, i.e., the distribution is right-skewed.  In a network of YouTube followers, for example, one will find a relatively small percentage of users having an exceptionally large number of followers, whereas there are many users that have only a small number of followers.  If each node represents a YouTube user, and there is an edge between nodes if one node follows the other, then we would observe that there are a small percentage of nodes that have extremely high degree and many vertices that have small degree.  This can be observed by examining that the degree distribution of the network has a long tail.  More precisely, the tail of the degree distribution follows a power law.  There are many other real-world networks that exhibit a power law degree distribution (e.g., citation networks, the internet at the autonomous systems level, the World Wide Web, and co-appearance of film actors).</p>
+                            <h3>Preferential Attachment</h3>
+                            <p>A network whose degree distribution (or tail of its degree distribution) approximately follows a power law is known as a scale-free network.  One possible explanation for the prevelance of scale-free networks in the real world is that they form according to a preferential attachment rule.  This means that when a new vertex is added to the network there is a higher probability that it attaches to vertices with higher degree.  The intuition can be understood through a social network: when a new person joins a community, it is more likely that they should become acquainted with the most popular people in the network, rather than people with relatively few acquaintances.  This mode of network formation is called preferential attachment.  We can simulate this network growth with this applet.  For more information visit <a href="https://en.wikipedia.org/wiki/Barab%C3%A1si%E2%80%93Albert_model">Barabasi-Albert Model Wikipedia Entry</a>.</p>
+                            <h3>Instructions</h3>
                             <ul>
-                                <li>The starting graph is the Petersen graph which is 3-regular.</li>
-                                <li>Click the add vertex button to add a new vertex.</li>
-                                <li>The new vertex will link up wi th an existing vertex with probability proportional to the degree of the existing vertex.</li>
-                                <li>This means that it is more likely for the newly added vertex to link to vertices of high degree.</li>
-                                <li>Vertices are colored based on their percentile in the degree distribution, so a vertex that appears more red is at the higher end of the degree distribution.</li>
-                                <li>Continue to click (or click and hold) the add vertex button to see how the degree distribution changes as this process continues.</li>
-                                <li>The key observation here is that the degree distribution follows a power law as more vertices are added according to this preferential attachment rule.</li>
-                                <li>You can notice this by observing the long tail of the distribution which means that a small fraction of the vertices have high degree while most vertices have low degree.</li>
-                                <li>A network whose degree distribution follows a power law is known as a scale-free network.</li>
-                                <li>For more information visit <a href="https://en.wikipedia.org/wiki/Barab%C3%A1si%E2%80%93Albert_model">Barabasi-Albert Model Wikipedia Entry</a>.</li>
+                                <li>Click the "add vertex" button to add a new vertex and hold it to add vertices continuously.</li>
+                                <li>Edges between the newly added vertex and the existing vertices form according to which mode you have selected:
+                                    <ul>
+                                        <li><span class="font-weight-bold">Default Mode W/ Preferential Attachment:</span> We cycle through each existing vertex and a link is formed with probability proportional to the existing vertex's degree.  If we cycle through all vertices and no new edges are formed (so the new vertex would be isolated) we discard the vertex and try again.</li>
+                                        <li><span class="font-weight-bold">Specify Number of Edges W/ Preferential Attachment:</span> Weight the existing vertices proportional to their degree and perform a weighted selection of k vertices without replacement from the existing vertices.</li>
+                                        <li><span class="font-weight-bold">Default Mode W/O Preferential Attachment:</span> If you have checked the "no preferential attachment" mode, then the probability of a new edge is the same for all existing vertices.  That is, the probability distribution is uniform.</li>
+                                        <li><span class="font-weight-bold">Specify Number of Edges W/O Preferential Attachment:</span> Weight each vertex equally and then select k vertices with which to form new edges.</li>
+                                    </ul>
+                                </li>
+                                <li>Vertices are sized and colored proportionally to their degree.  Higher degree vertices (in terms of percentile ranking) appear redder and bigger.</li>
+                                <li>Compare the degree distribution of a graph obtained with preferential attachment to one obtained without preferential attachment.  You can see the difference in the distribution of sizes/colors of nodes.</li>
+                                <li>You can adjust the scale of the vertices as well as the layout's repulsion strength with the sliders.</li>
+                                <li>Click "reset graph" to return to the original graph.</li>
+                                <li>Click "save graph" to save the current graph to local storage.</li>
+                                <li>You can load a saved graph by selecting it with the dropdown menu and clicking "load graph."</li>
+                                <li>If you'd like to analyze the graph further, you can download the edge list as a csv file and import it in to your favorite network analysis program such as Gephi.</li>
                             </ul>
                         </div>
                     </div>

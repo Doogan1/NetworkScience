@@ -35,8 +35,15 @@ function resetSimulation() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+    const tooltip = d3.select('#tooltip');
+    d3.select('body').on('mousemove', function(event) {
+        // Check if the event target has the class 'circle'. If not, hide the tooltip.
+        if (!d3.select(event.target).classed('circle')) {
+            tooltip.style('opacity', 0);  // Hide the tooltip if the mouse is not over a circle
+        }
+    });
     // Width and height
-    var width = 800, height = 750;
+    var height = 750;
     let isVertexBeingDragged = false;
         // Setup the SVG and the group (g) element
     var svg = d3.select("#network").append("svg")
