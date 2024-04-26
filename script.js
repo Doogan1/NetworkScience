@@ -1,5 +1,5 @@
-import { createGraphFromJson, addKVerticesWithPreferentialAttachment, addVertexWithPreferentialAttachment, setupForceSimulation, updateCollisionRadius} from './graphManipulation.js';
-import { chartDataFromGraph, drawDegreeDistributionChart, updateGraphStatistics, calculateGraphDensity, distanceFromDensity} from './graphStats.js';
+import { createGraphFromJson, addKVerticesWithPreferentialAttachment, addVertexWithPreferentialAttachment, setupForceSimulation, updateCollisionRadius} from 'graphManipulation.js';
+import { chartDataFromGraph, drawDegreeDistributionChart, updateGraphStatistics, calculateGraphDensity, distanceFromDensity} from 'graphStats.js';
 import { Vertex, Edge, applyDrag} from './graphClasses.js';
 
 
